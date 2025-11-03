@@ -95,7 +95,9 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
         'com.google.android.contacts/com.android.contacts.activities.PeopleActivity'
     ),
     'facebook|fb': 'com.facebook.katana/com.facebook.katana.LoginActivity',
+    'walmart': 'com.walmart.android/com.walmart.glass.integration.splash.SplashActivity',
     'whatsapp|wa': 'com.whatsapp/com.whatsapp.Main',
+    'wikipedia': 'org.wikipedia/org.wikipedia.main.MainActivity',
     'instagram|ig': (
         'com.instagram.android/com.instagram.mainactivity.MainActivity'
     ),
