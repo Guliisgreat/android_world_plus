@@ -35,6 +35,15 @@ from android_world.task_evals import task_eval
 
 logging.set_verbosity(logging.WARNING)
 
+# Set up environment variables
+os.environ.setdefault('ANDROID_HOME', '/shared/ken/.android')
+os.environ.setdefault('ANDROID_SDK_ROOT', '/shared/ken/.android')
+
+# Ensure a writable temp directory
+_AW_TMPDIR = os.path.join(os.path.dirname(__file__), ".aw_tmp")
+os.makedirs(_AW_TMPDIR, exist_ok=True)
+os.environ.setdefault("TMPDIR", _AW_TMPDIR)
+
 os.environ['GRPC_VERBOSITY'] = 'ERROR'  # Only show errors
 os.environ['GRPC_TRACE'] = 'none'  # Disable tracing
 
@@ -44,6 +53,7 @@ def _find_adb_directory() -> str:
   potential_paths = [
       os.path.expanduser('~/Library/Android/sdk/platform-tools/adb'),
       os.path.expanduser('~/Android/Sdk/platform-tools/adb'),
+      '/shared/ken/.android/platform-tools/adb',  # Cluster-specific path
   ]
   for path in potential_paths:
     if os.path.isfile(path):
