@@ -15,6 +15,67 @@ Both scripts allow you to control an Android emulator running on a Linux server 
 
 ---
 
+## Global Environment Setup
+
+Before using the web access scripts, you need to set up the Android SDK environment variables. This ensures that `adb`, `emulator`, and other Android tools are available in your PATH.
+
+### Setup Android Environment Variables
+
+Run the following commands, replacing `<intended_path_here>` with your actual Android SDK path (e.g., `/home/username/Android/Sdk`):
+
+```bash
+# Set ANDROID_HOME to your Android SDK path
+export ANDROID_HOME=<intended_path_here>
+
+# Add to ~/.bashrc for persistence
+echo "export ANDROID_HOME=$ANDROID_HOME" >> ~/.bashrc
+
+echo 'export SDK=$ANDROID_HOME' >> ~/.bashrc
+
+echo 'export ANDROID_SDK_ROOT=$ANDROID_HOME' >> ~/.bashrc
+
+echo 'export ANDROID_AVD_HOME=$ANDROID_HOME/avd' >> ~/.bashrc
+
+echo 'export PATH=$SDK/emulator:$SDK/tools:$SDK/tools/bin:$SDK/platform-tools:$PATH' >> ~/.bashrc
+
+# Reload bash configuration
+source ~/.bashrc
+```
+
+### Server-Specific Configuration
+
+**For server 202.78.161.193 users:**
+
+If you are using server 202.78.161.193, the Android Home is located at `/shared/ken/.android`. Use this command:
+
+```bash
+export ANDROID_HOME=/shared/ken/.android
+```
+
+Then continue with the rest of the setup commands above (adding to `~/.bashrc`, etc.).
+
+### Verify Setup
+
+After running the setup commands, verify that the environment is configured correctly:
+
+```bash
+# Check if ANDROID_HOME is set
+echo $ANDROID_HOME
+
+# Verify adb is in PATH
+which adb
+
+# Verify emulator is in PATH
+which emulator
+
+# Check adb version
+adb version
+```
+
+**Note:** If you're using a different shell (e.g., zsh), replace `~/.bashrc` with `~/.zshrc` in the commands above.
+
+---
+
 ## Quick Start
 
 ### Step 1: Start the Android Emulator
