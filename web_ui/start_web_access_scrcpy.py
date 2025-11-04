@@ -16,6 +16,8 @@ Requirements:
 Usage:
     python3 start_web_access_scrcpy.py
     python3 start_web_access_scrcpy.py --web-port 6080 --vnc-port 5901
+    python3 start_web_access_scrcpy.py --device-serial emulator-5554
+    python3 start_web_access_scrcpy.py --list-devices  # List available devices
 """
 
 import os
@@ -36,9 +38,10 @@ logger = logging.getLogger(__name__)
 
 
 class ScrcpyWebAccess:
-    def __init__(self, web_port: int = 6080, vnc_port: int = 5901):
+    def __init__(self, web_port: int = 6080, vnc_port: int = 5901, device_serial: str = None):
         self.web_port = web_port
         self.vnc_port = vnc_port
+        self.device_serial = device_serial
         self.scrcpy_process = None
         self.xvfb_process = None
         self.x11vnc_process = None
@@ -125,8 +128,8 @@ class ScrcpyWebAccess:
         
         return True
     
-    def check_emulator_connected(self) -> bool:
-        """Check if emulator is connected via ADB."""
+    def list_devices(self) -> list:
+        """List all connected devices and return their serial numbers."""
         try:
             result = subprocess.run(
                 ["adb", "devices"],
@@ -136,18 +139,43 @@ class ScrcpyWebAccess:
             )
             
             lines = result.stdout.strip().split('\n')[1:]  # Skip header
-            devices = [line for line in lines if line.strip() and 'device' in line]
+            devices = []
+            for line in lines:
+                if line.strip() and 'device' in line:
+                    serial = line.split()[0]
+                    devices.append(serial)
             
-            if devices:
-                logger.info(f"Found {len(devices)} device(s) connected")
-                return True
-            else:
-                logger.warning("No devices connected. Make sure emulator is running.")
-                logger.info("You can check with: adb devices")
-                return False
+            return devices
         except Exception as e:
-            logger.error("Error checking devices: %s", str(e))
+            logger.error("Error listing devices: %s", str(e))
+            return []
+    
+    def check_emulator_connected(self) -> bool:
+        """Check if emulator is connected via ADB."""
+        devices = self.list_devices()
+        
+        if not devices:
+            logger.warning("No devices connected. Make sure emulator is running.")
+            logger.info("You can check with: adb devices")
             return False
+        
+        logger.info(f"Found {len(devices)} device(s) connected")
+        
+        # If device_serial is specified, verify it exists
+        if self.device_serial:
+            if self.device_serial not in devices:
+                logger.error(f"Specified device '{self.device_serial}' not found!")
+                logger.error(f"Available devices: {', '.join(devices)}")
+                return False
+            logger.info(f"Using device: {self.device_serial}")
+        elif len(devices) > 1:
+            logger.warning(f"Multiple devices detected: {', '.join(devices)}")
+            logger.warning("scrcpy will connect to the first device. Use --device-serial to specify which one.")
+            logger.info(f"Will use: {devices[0]}")
+        else:
+            logger.info(f"Using device: {devices[0]}")
+        
+        return True
     
     def start_xvfb(self) -> bool:
         """Start Xvfb (virtual X server)."""
@@ -237,6 +265,10 @@ class ScrcpyWebAccess:
                 "--window-width", "1920",
                 "--window-height", "1080"
             ]
+            
+            # Add device serial if specified
+            if self.device_serial:
+                cmd.extend(["--serial", self.device_serial])
             
             logger.info("Executing: DISPLAY=%s PATH=%s %s", display, env["PATH"][:100], " ".join(cmd))
             self.scrcpy_process = subprocess.Popen(
@@ -438,6 +470,8 @@ class ScrcpyWebAccess:
         print(f"🖥️  Virtual Display: :{self.display_num}")
         print(f"🔌 VNC Port: {self.vnc_port}")
         print(f"🌍 Web Port: {self.web_port}")
+        if self.device_serial:
+            print(f"📱 Device: {self.device_serial}")
         print(f"\n💡 Usage:")
         print(f"   - Screen updates automatically (30-60 FPS)")
         print(f"   - Click and drag to interact with emulator")
@@ -587,12 +621,37 @@ def main():
         default=5901,
         help="VNC server port (default: 5901)"
     )
+    parser.add_argument(
+        "--device-serial",
+        type=str,
+        default=None,
+        help="ADB device serial number to connect to (required if multiple devices are connected). Use 'adb devices' to list available devices."
+    )
+    parser.add_argument(
+        "--list-devices",
+        action="store_true",
+        help="List all connected devices and exit"
+    )
     
     args = parser.parse_args()
     
+    # List devices if requested
+    if args.list_devices:
+        access = ScrcpyWebAccess()
+        devices = access.list_devices()
+        if devices:
+            print("\nConnected devices:")
+            for i, device in enumerate(devices, 1):
+                print(f"  {i}. {device}")
+            print(f"\nUse --device-serial {devices[0]} to select a specific device")
+        else:
+            print("No devices connected. Use 'adb devices' to check.")
+        sys.exit(0)
+    
     access = ScrcpyWebAccess(
         web_port=args.web_port,
-        vnc_port=args.vnc_port
+        vnc_port=args.vnc_port,
+        device_serial=args.device_serial
     )
     
     access.run()

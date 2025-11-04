@@ -18,10 +18,37 @@ This document describes the architecture and design of the web access scripts fo
 
 The web access system provides remote control of Android emulators through a web browser. Two different approaches are implemented:
 
-1. **ADB-based Approach**: Uses ADB commands for screenshot capture and input events
-2. **scrcpy-based Approach**: Uses scrcpy for real-time video streaming
+1. **scrcpy-based Approach** (Recommended): Uses scrcpy for real-time video streaming with high frame rates and low latency
+2. **ADB-based Approach**: Uses ADB commands for screenshot capture and input events
 
 Both approaches enable remote access from a web browser (e.g., on a Mac laptop) to an Android emulator running on a Linux server.
+
+### Multiple Team Members Support
+
+The system supports multiple team members working simultaneously, each with their own emulator:
+
+- **Device Selection**: Each team member can specify which emulator to connect to using the `--device-serial` parameter
+- **Port Isolation**: Multiple instances can run simultaneously using different ports (`--web-port`, `--vnc-port`)
+- **Automatic Detection**: The script automatically detects and lists all connected devices
+- **Device Validation**: Validates that the specified device exists before starting
+
+**Usage Example for Teams:**
+
+```bash
+# Team member 1 - List available devices
+python3 start_web_access_scrcpy.py --list-devices
+
+# Team member 1 - Connect to their emulator
+python3 start_web_access_scrcpy.py --device-serial emulator-5554 --web-port 6080
+
+# Team member 2 - Connect to their emulator with different ports
+python3 start_web_access_scrcpy.py --device-serial emulator-5556 --web-port 6081 --vnc-port 5902
+
+# Team member 3 - Connect to their emulator
+python3 start_web_access_scrcpy.py --device-serial emulator-5558 --web-port 6082 --vnc-port 5903
+```
+
+Each team member runs their own instance, targeting their specific emulator and using unique ports to avoid conflicts.
 
 ### Key Design Principles
 
@@ -81,7 +108,318 @@ Both approaches enable remote access from a web browser (e.g., on a Mac laptop) 
 
 ---
 
-## Method A: ADB-Based Architecture
+## Method A: scrcpy-Based Architecture (Recommended)
+
+The scrcpy-based approach provides real-time video streaming with high frame rates (30-60 FPS) and low latency (~30-50ms). It's the recommended method for interactive use and provides the smoothest user experience.
+
+### Multi-Device Support
+
+When multiple team members work together, each can run their own instance:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Linux Server                                                    │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Team Member 1 Instance                                   │  │
+│  │  python3 start_web_access_scrcpy.py                      │  │
+│  │  --device-serial emulator-5554                           │  │
+│  │  --web-port 6080 --vnc-port 5901                        │  │
+│  │                                                            │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │  │
+│  │  │  Xvfb    │  │  scrcpy  │  │  x11vnc   │              │  │
+│  │  │  :10     │  │  (5554)  │  │  :5901    │              │  │
+│  │  └──────────┘  └──────────┘  └──────────┘              │  │
+│  │                     │                                      │  │
+│  │                     │ ADB                                  │  │
+│  │                     ▼                                      │  │
+│  │              ┌──────────────┐                              │  │
+│  │              │ Emulator 5554│                              │  │
+│  │              └──────────────┘                              │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Team Member 2 Instance                                   │  │
+│  │  python3 start_web_access_scrcpy.py                      │  │
+│  │  --device-serial emulator-5556                           │  │
+│  │  --web-port 6081 --vnc-port 5902                        │  │
+│  │                                                            │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │  │
+│  │  │  Xvfb    │  │  scrcpy  │  │  x11vnc   │              │  │
+│  │  │  :11     │  │  (5556)  │  │  :5902    │              │  │
+│  │  └──────────┘  └──────────┘  └──────────┘              │  │
+│  │                     │                                      │  │
+│  │                     │ ADB                                  │  │
+│  │                     ▼                                      │  │
+│  │              ┌──────────────┐                              │  │
+│  │              │ Emulator 5556│                              │  │
+│  │              └──────────────┘                              │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Team Member 3 Instance                                   │  │
+│  │  python3 start_web_access_scrcpy.py                      │  │
+│  │  --device-serial emulator-5558                           │  │
+│  │  --web-port 6082 --vnc-port 5903                        │  │
+│  │  ... (similar structure)                                 │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Device Selection Features
+
+- **Automatic Device Detection**: Lists all connected devices via `--list-devices`
+- **Device Validation**: Ensures the specified device exists before starting
+- **Multiple Device Warning**: Warns if multiple devices are connected without specifying a serial
+- **Port Management**: Each instance uses unique ports to avoid conflicts
+
+### Component Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  start_web_access_scrcpy.py (Parent Process)                   │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  ScrcpyWebAccess Class                                    │  │
+│  │                                                            │  │
+│  │  Methods:                                                 │  │
+│  │  - check_dependencies()                                   │  │
+│  │  - list_devices()         → List connected devices        │  │
+│  │  - check_emulator_connected() → Validate device          │  │
+│  │  - start_xvfb()          → Virtual display                │  │
+│  │  - start_scrcpy()        → Screen mirroring               │  │
+│  │  - start_x11vnc()       → VNC server                     │  │
+│  │  - start_websockify()   → WebSocket bridge                │  │
+│  │  - stop()                → Cleanup all processes          │  │
+│  │  - run()                  → Main loop                     │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                            │                                      │
+│         ┌──────────────────┼──────────────────┐                 │
+│         │                  │                  │                 │
+│         ▼                  ▼                  ▼                 │
+│  ┌──────────┐      ┌──────────┐      ┌──────────┐           │
+│  │  Xvfb     │      │  scrcpy  │      │  x11vnc   │           │
+│  │ (display  │      │          │      │  (VNC)   │           │
+│  │  :10)     │      │          │      │          │           │
+│  └─────┬─────┘      └─────┬────┘      └─────┬────┘           │
+│        │                  │                  │                 │
+│        │                  │                  │                 │
+│        └──────────┬───────┴─────────────────┘                 │
+│                   │                                              │
+│                   │ DISPLAY=:10                                 │
+│                   ▼                                              │
+│        ┌──────────────────────┐                                 │
+│        │  Virtual X Display   │                                 │
+│        │  (1920x1080x24)      │                                 │
+│        │                      │                                 │
+│        │  scrcpy window       │                                 │
+│        │  renders here       │                                 │
+│        └──────────────────────┘                                 │
+│                   │                                              │
+│                   │ x11vnc captures                              │
+│                   ▼                                              │
+│        ┌──────────────────────┐                                 │
+│        │  x11vnc              │                                 │
+│        │  (VNC Server)        │                                 │
+│        │  Port: 5901          │                                 │
+│        └──────────┬───────────┘                                 │
+│                   │                                              │
+│                   │ VNC Protocol (TCP)                          │
+│                   ▼                                              │
+│        ┌──────────────────────┐                                 │
+│        │  websockify          │                                 │
+│        │  (WebSocket Bridge)  │                                 │
+│        │  Port: 6080          │                                 │
+│        │                      │                                 │
+│        │  - WebSocket Server  │                                 │
+│        │  - VNC Client        │                                 │
+│        │  - HTTP Server       │                                 │
+│        │    (serves noVNC UI) │                                 │
+│        └──────────────────────┘                                 │
+└─────────────────────────────────────────────────────────────────┘
+                   │
+                   │ HTTP/WebSocket
+                   │
+┌─────────────────────────────────────────────────────────────────┐
+│  Web Browser                                                     │
+│  - noVNC Client (JavaScript)                                    │
+│  - WebSocket Connection                                         │
+│  - VNC Protocol over WebSocket                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Detailed Component Stack
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 1: Android Emulator                                     │
+│ - Android OS running                                          │
+│ - ADB connection active                                      │
+└────────────────────┬──────────────────────────────────────────┘
+                     │
+                     │ ADB Protocol
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 2: scrcpy                                              │
+│ - Connects to emulator via ADB                               │
+│ - Captures screen frames                                     │
+│ - Encodes video (H.264)                                      │
+│ - Renders to X window                                        │
+│ - Runs on virtual display :10                                │
+│ - Supports --serial flag for device selection               │
+└────────────────────┬──────────────────────────────────────────┘
+                     │
+                     │ Renders to X window
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 3: Xvfb (Virtual X Server)                             │
+│ - Virtual display :10                                        │
+│ - Resolution: 1920x1080x24                                   │
+│ - No physical display needed                                 │
+│ - Provides X11 protocol for scrcpy window                   │
+└────────────────────┬──────────────────────────────────────────┘
+                     │
+                     │ X11 protocol
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 4: x11vnc (VNC Server)                                 │
+│ - Captures X11 display                                       │
+│ - Provides VNC protocol (RFB)                               │
+│ - Listens on TCP port 5901                                   │
+│ - Handles multiple clients                                   │
+└────────────────────┬──────────────────────────────────────────┘
+                     │
+                     │ VNC Protocol (TCP)
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 5: websockify (WebSocket Bridge)                       │
+│ - WebSocket Server (port 6080)                               │
+│ - VNC Client (connects to x11vnc)                            │
+│ - Protocol translation: WebSocket ↔ VNC                      │
+│ - HTTP Server (serves noVNC UI)                               │
+└────────────────────┬──────────────────────────────────────────┘
+                     │
+                     │ HTTP/WebSocket
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 6: Web Browser                                         │
+│ - noVNC JavaScript Client                                    │
+│ - WebSocket connection                                       │
+│ - Renders VNC frames in canvas                               │
+│ - Handles user input (mouse/keyboard)                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow: scrcpy Method (Video Streaming)
+
+```
+┌──────────┐
+│ Browser  │
+│ (noVNC)  │
+└────┬─────┘
+     │
+     │ 1. WebSocket: Connect to ws://server:6080
+     ▼
+┌─────────────────────┐
+│  websockify         │
+│  - Accepts WebSocket│
+│  - Connects to VNC  │
+└────┬────────────────┘
+     │
+     │ 2. VNC Protocol: FramebufferUpdateRequest
+     ▼
+┌─────────────────────┐
+│  x11vnc             │
+│  (VNC Server)       │
+└────┬────────────────┘
+     │
+     │ 3. Captures X11 display
+     ▼
+┌─────────────────────┐
+│  Xvfb               │
+│  (Virtual Display)  │
+│  Display :10        │
+└────┬────────────────┘
+     │
+     │ 4. X11 framebuffer data
+     ▼
+┌─────────────────────┐
+│  scrcpy             │
+│  - Window on :10    │
+│  - Renders frames   │
+└────┬────────────────┘
+     │
+     │ 5. ADB Protocol: Get screen data (with --serial if specified)
+     ▼
+┌──────────────┐
+│   Emulator   │
+│ (Android OS) │
+└────┬─────────┘
+     │
+     │ 6. Screen frame data (compressed H.264)
+     │ 7. Returns to scrcpy
+     ▼
+┌─────────────────────┐
+│  scrcpy             │
+│  - Decodes video    │
+│  - Renders to X    │
+└────┬────────────────┘
+     │
+     │ 8. Updated X11 framebuffer
+     ▼
+[Loop back to x11vnc → websockify → browser]
+```
+
+### Input Event Flow: scrcpy Method
+
+```
+┌──────────┐
+│ Browser  │
+│ (User clicks)
+└────┬─────┘
+     │
+     │ 1. WebSocket: Mouse event
+     ▼
+┌─────────────────────┐
+│  websockify         │
+│  - Receives WebSocket│
+│  - Translates to VNC │
+└────┬────────────────┘
+     │
+     │ 2. VNC Protocol: PointerEvent
+     ▼
+┌─────────────────────┐
+│  x11vnc             │
+│  - Receives VNC event│
+│  - Translates to X11│
+└────┬────────────────┘
+     │
+     │ 3. X11: XButtonPress/XButtonRelease
+     ▼
+┌─────────────────────┐
+│  Xvfb               │
+│  (Virtual Display)  │
+└────┬────────────────┘
+     │
+     │ 4. X11 event delivered to scrcpy window
+     ▼
+┌─────────────────────┐
+│  scrcpy             │
+│  - Receives X11 event│
+│  - Translates to ADB│
+└────┬────────────────┘
+     │
+     │ 5. ADB: input tap X Y (to specified device)
+     ▼
+┌──────────────┐
+│   Emulator   │
+│ (Processes input)
+└──────────────┘
+```
+
+---
+
+## Method B: ADB-Based Architecture
 
 ### Component Diagram
 
@@ -214,252 +552,6 @@ Both approaches enable remote access from a web browser (e.g., on a Mac laptop) 
 
 ---
 
-## Method B: scrcpy-Based Architecture
-
-### Component Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  start_web_access_scrcpy.py (Parent Process)                   │
-│                                                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  ScrcpyWebAccess Class                                    │  │
-│  │                                                            │  │
-│  │  Methods:                                                 │  │
-│  │  - check_dependencies()                                   │  │
-│  │  - check_emulator_connected()                             │  │
-│  │  - start_xvfb()          → Virtual display                │  │
-│  │  - start_scrcpy()        → Screen mirroring               │  │
-│  │  - start_x11vnc()       → VNC server                     │  │
-│  │  - start_websockify()   → WebSocket bridge                │  │
-│  │  - stop()                → Cleanup all processes          │  │
-│  │  - run()                  → Main loop                     │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                            │                                      │
-│         ┌──────────────────┼──────────────────┐                 │
-│         │                  │                  │                 │
-│         ▼                  ▼                  ▼                 │
-│  ┌──────────┐      ┌──────────┐      ┌──────────┐           │
-│  │  Xvfb     │      │  scrcpy  │      │  x11vnc   │           │
-│  │ (display  │      │          │      │  (VNC)   │           │
-│  │  :10)     │      │          │      │          │           │
-│  └─────┬─────┘      └─────┬────┘      └─────┬────┘           │
-│        │                  │                  │                 │
-│        │                  │                  │                 │
-│        └──────────┬───────┴─────────────────┘                 │
-│                   │                                              │
-│                   │ DISPLAY=:10                                 │
-│                   ▼                                              │
-│        ┌──────────────────────┐                                 │
-│        │  Virtual X Display   │                                 │
-│        │  (1920x1080x24)      │                                 │
-│        │                      │                                 │
-│        │  scrcpy window       │                                 │
-│        │  renders here       │                                 │
-│        └──────────────────────┘                                 │
-│                   │                                              │
-│                   │ x11vnc captures                              │
-│                   ▼                                              │
-│        ┌──────────────────────┐                                 │
-│        │  x11vnc              │                                 │
-│        │  (VNC Server)        │                                 │
-│        │  Port: 5901          │                                 │
-│        └──────────┬───────────┘                                 │
-│                   │                                              │
-│                   │ VNC Protocol (TCP)                          │
-│                   ▼                                              │
-│        ┌──────────────────────┐                                 │
-│        │  websockify          │                                 │
-│        │  (WebSocket Bridge)  │                                 │
-│        │  Port: 6080          │                                 │
-│        │                      │                                 │
-│        │  - WebSocket Server  │                                 │
-│        │  - VNC Client        │                                 │
-│        │  - HTTP Server       │                                 │
-│        │    (serves noVNC UI) │                                 │
-│        └──────────────────────┘                                 │
-└─────────────────────────────────────────────────────────────────┘
-                   │
-                   │ HTTP/WebSocket
-                   │
-┌─────────────────────────────────────────────────────────────────┐
-│  Web Browser                                                     │
-│  - noVNC Client (JavaScript)                                    │
-│  - WebSocket Connection                                         │
-│  - VNC Protocol over WebSocket                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Detailed Component Stack
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 1: Android Emulator                                     │
-│ - Android OS running                                          │
-│ - ADB connection active                                      │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     │ ADB Protocol
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 2: scrcpy                                              │
-│ - Connects to emulator via ADB                               │
-│ - Captures screen frames                                     │
-│ - Encodes video (H.264)                                      │
-│ - Renders to X window                                        │
-│ - Runs on virtual display :10                                │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     │ Renders to X window
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 3: Xvfb (Virtual X Server)                             │
-│ - Virtual display :10                                        │
-│ - Resolution: 1920x1080x24                                   │
-│ - No physical display needed                                 │
-│ - Provides X11 protocol for scrcpy window                   │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     │ X11 protocol
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 4: x11vnc (VNC Server)                                 │
-│ - Captures X11 display                                       │
-│ - Provides VNC protocol (RFB)                               │
-│ - Listens on TCP port 5901                                   │
-│ - Handles multiple clients                                   │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     │ VNC Protocol (TCP)
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 5: websockify (WebSocket Bridge)                       │
-│ - WebSocket Server (port 6080)                               │
-│ - VNC Client (connects to x11vnc)                            │
-│ - Protocol translation: WebSocket ↔ VNC                      │
-│ - HTTP Server (serves noVNC UI)                               │
-└────────────────────┬──────────────────────────────────────────┘
-                     │
-                     │ HTTP/WebSocket
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 6: Web Browser                                         │
-│ - noVNC JavaScript Client                                    │
-│ - WebSocket connection                                       │
-│ - Renders VNC frames in canvas                               │
-│ - Handles user input (mouse/keyboard)                        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Data Flow: scrcpy Method (Video Streaming)
-
-```
-┌──────────┐
-│ Browser  │
-│ (noVNC)  │
-└────┬─────┘
-     │
-     │ 1. WebSocket: Connect to ws://server:6080
-     ▼
-┌─────────────────────┐
-│  websockify         │
-│  - Accepts WebSocket│
-│  - Connects to VNC  │
-└────┬────────────────┘
-     │
-     │ 2. VNC Protocol: FramebufferUpdateRequest
-     ▼
-┌─────────────────────┐
-│  x11vnc             │
-│  (VNC Server)       │
-└────┬────────────────┘
-     │
-     │ 3. Captures X11 display
-     ▼
-┌─────────────────────┐
-│  Xvfb               │
-│  (Virtual Display)  │
-│  Display :10        │
-└────┬────────────────┘
-     │
-     │ 4. X11 framebuffer data
-     ▼
-┌─────────────────────┐
-│  scrcpy             │
-│  - Window on :10    │
-│  - Renders frames   │
-└────┬────────────────┘
-     │
-     │ 5. ADB Protocol: Get screen data
-     ▼
-┌──────────────┐
-│   Emulator   │
-│ (Android OS) │
-└────┬─────────┘
-     │
-     │ 6. Screen frame data (compressed H.264)
-     │ 7. Returns to scrcpy
-     ▼
-┌─────────────────────┐
-│  scrcpy             │
-│  - Decodes video    │
-│  - Renders to X    │
-└────┬────────────────┘
-     │
-     │ 8. Updated X11 framebuffer
-     ▼
-[Loop back to x11vnc → websockify → browser]
-```
-
-### Input Event Flow: scrcpy Method
-
-```
-┌──────────┐
-│ Browser  │
-│ (User clicks)
-└────┬─────┘
-     │
-     │ 1. WebSocket: Mouse event
-     ▼
-┌─────────────────────┐
-│  websockify         │
-│  - Receives WebSocket│
-│  - Translates to VNC │
-└────┬────────────────┘
-     │
-     │ 2. VNC Protocol: PointerEvent
-     ▼
-┌─────────────────────┐
-│  x11vnc             │
-│  - Receives VNC event│
-│  - Translates to X11│
-└────┬────────────────┘
-     │
-     │ 3. X11: XButtonPress/XButtonRelease
-     ▼
-┌─────────────────────┐
-│  Xvfb               │
-│  (Virtual Display)  │
-└────┬────────────────┘
-     │
-     │ 4. X11 event delivered to scrcpy window
-     ▼
-┌─────────────────────┐
-│  scrcpy             │
-│  - Receives X11 event│
-│  - Translates to ADB│
-└────┬────────────────┘
-     │
-     │ 5. ADB: input tap X Y
-     ▼
-┌──────────────┐
-│   Emulator   │
-│ (Processes input)
-└──────────────┘
-```
-
----
-
 ## Process Management
 
 ### Process Hierarchy
@@ -506,11 +598,6 @@ The parent process monitors child processes:
 
 ### Port Usage
 
-#### ADB Method
-- **Web Port**: 6080 (default, configurable)
-- **Protocol**: HTTP
-- **Binding**: `0.0.0.0:6080` (all interfaces)
-
 #### scrcpy Method
 - **Web Port**: 6080 (default, configurable)
 - **VNC Port**: 5901 (default, configurable)
@@ -519,6 +606,12 @@ The parent process monitors child processes:
   - WebSocket (for VNC data)
   - VNC/RFB (internal, x11vnc ↔ websockify)
 - **Binding**: `0.0.0.0:6080` (websockify), `localhost:5901` (x11vnc)
+- **Multi-Instance**: Each team member can use different ports (e.g., 6080, 6081, 6082)
+
+#### ADB Method
+- **Web Port**: 6080 (default, configurable)
+- **Protocol**: HTTP
+- **Binding**: `0.0.0.0:6080` (all interfaces)
 
 ### Network Flow
 
@@ -574,16 +667,6 @@ The parent process monitors child processes:
 
 ## Technology Stack
 
-### ADB Method
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Script** | Python 3 | Orchestration |
-| **HTTP Server** | Python `http.server` | Web server |
-| **ADB** | Android Debug Bridge | Device communication |
-| **Protocol** | HTTP/HTTPS | Web communication |
-| **Frontend** | HTML/JavaScript | Web UI |
-
 ### scrcpy Method
 
 | Component | Technology | Purpose |
@@ -595,6 +678,16 @@ The parent process monitors child processes:
 | **websockify** | Python WebSocket bridge | WebSocket ↔ VNC |
 | **noVNC** | JavaScript VNC client | Web frontend |
 | **Protocols** | HTTP, WebSocket, VNC/RFB | Communication |
+
+### ADB Method
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Script** | Python 3 | Orchestration |
+| **HTTP Server** | Python `http.server` | Web server |
+| **ADB** | Android Debug Bridge | Device communication |
+| **Protocol** | HTTP/HTTPS | Web communication |
+| **Frontend** | HTML/JavaScript | Web UI |
 
 ---
 
@@ -639,7 +732,24 @@ The parent process monitors child processes:
 - More flexible and compatible
 - Works with headless servers
 
-### 5. Error Handling
+### 5. Multi-Device Support
+
+**Decision**: Support device selection via `--device-serial` parameter
+
+**Rationale**:
+- Enables multiple team members to work simultaneously
+- Each member can connect to their own emulator
+- Prevents conflicts when multiple devices are connected
+- Validates device existence before starting
+- Provides clear warnings when multiple devices detected
+
+**Implementation**:
+- `list_devices()` method queries ADB for connected devices
+- `check_emulator_connected()` validates specified device exists
+- `start_scrcpy()` passes `--serial` flag to scrcpy for device targeting
+- Port isolation allows multiple instances to run simultaneously
+
+### 6. Error Handling
 
 **Decision**: Strict dependency checking, clear error messages
 
@@ -653,14 +763,6 @@ The parent process monitors child processes:
 
 ## Performance Characteristics
 
-### ADB Method
-
-- **Frame Rate**: ~10 FPS (limited by polling interval)
-- **Latency**: ~100-200ms
-- **Bandwidth**: ~1-5 Mbps (depending on screen content)
-- **CPU**: Low to moderate
-- **Memory**: Low (~50-100 MB)
-
 ### scrcpy Method
 
 - **Frame Rate**: 30-60 FPS (depending on network)
@@ -668,6 +770,15 @@ The parent process monitors child processes:
 - **Bandwidth**: ~5-20 Mbps (depending on content)
 - **CPU**: Moderate to high
 - **Memory**: Moderate (~200-500 MB)
+- **Multi-Instance**: Each instance uses separate resources (isolated)
+
+### ADB Method
+
+- **Frame Rate**: ~10 FPS (limited by polling interval)
+- **Latency**: ~100-200ms
+- **Bandwidth**: ~1-5 Mbps (depending on screen content)
+- **CPU**: Low to moderate
+- **Memory**: Low (~50-100 MB)
 
 ---
 
@@ -677,7 +788,7 @@ Potential improvements:
 
 1. **Authentication**: Add password protection
 2. **SSL/TLS**: Support HTTPS/WSS
-3. **Multi-device**: Support multiple emulators
+3. **Multi-device Management**: Web UI for managing multiple instances
 4. **Configuration File**: YAML/JSON config
 5. **Logging**: Structured logging to file
 6. **Metrics**: Performance metrics collection
@@ -690,8 +801,8 @@ Potential improvements:
 
 The web access architecture provides two complementary approaches for remote Android emulator control:
 
-- **ADB Method**: Simple, lightweight, good for basic use cases
-- **scrcpy Method**: High-performance, smooth experience, better for interactive use
+- **scrcpy Method** (Recommended): High-performance, smooth experience with 30-60 FPS, ideal for interactive use and team collaboration. Supports multiple team members working simultaneously with device selection and port isolation.
+- **ADB Method**: Simple, lightweight, good for basic use cases and low-resource scenarios
 
-Both methods are designed for ease of use, reliability, and remote access support. The architecture prioritizes clarity, maintainability, and proper resource management.
+Both methods are designed for ease of use, reliability, and remote access support. The architecture prioritizes clarity, maintainability, and proper resource management. The scrcpy method is recommended for production use, especially when multiple team members need to work simultaneously, as it provides better performance and supports device selection for multi-user scenarios.
 

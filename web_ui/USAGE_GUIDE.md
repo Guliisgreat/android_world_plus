@@ -6,20 +6,76 @@ This guide explains how to use the two web access scripts for controlling Androi
 
 There are two web access scripts available:
 
-1. **`start_web_access_adb.py`** - ADB-based web access (~10 FPS, manual refresh)
-2. **`start_web_access_scrcpy.py`** - scrcpy-based web access (30-60 FPS, automatic refresh)
+1. **`start_web_access_scrcpy.py`** (Recommended) - scrcpy-based web access (30-60 FPS, real-time streaming)
+2. **`start_web_access_adb.py`** - ADB-based web access (~10 FPS, polling-based)
 
 Both scripts allow you to control an Android emulator running on a Linux server from a web browser on your local machine (e.g., Mac laptop).
+
+**Recommendation:** Use `start_web_access_scrcpy.py` for the best performance and smoothest experience. It provides real-time video streaming at 30-60 FPS with low latency, making it ideal for interactive use and team collaboration.
 
 ---
 
 ## Quick Start
 
-### Prerequisites
+### Step 1: Start the Android Emulator
 
-1. **Android emulator must be running** on the Linux server
+Before starting the web access scripts, you must first start the Android emulator on the Linux server.
+
+#### Start Emulator
+
+```bash
+# Start the emulator with recommended settings
+emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8556 -port 5556
+```
+
+**Command Options Explained:**
+- `-avd AWAvd`: Uses the AVD named "AWAvd"
+- `-snapshot clean`: Starts from a clean snapshot (faster boot)
+- `-no-window`: Runs headless (no GUI window)
+- `-no-audio`: Disables audio (not needed for web access)
+- `-skip-adb-auth`: Skips ADB authentication
+- `-no-boot-anim`: Disables boot animation (faster startup)
+- `-gpu auto`: Auto-selects GPU mode
+- `-no-snapshot-save`: Doesn't save snapshots (faster)
+- `-read-only`: Uses read-only mode
+- `-grpc 8556`: GRPC port for emulator control
+- `-port 5556`: ADB port (device will appear as `emulator-5556`)
+
+#### Verify Emulator is Running
+
+```bash
+# Check if emulator is connected via ADB
+adb devices
+
+# You should see output like:
+# List of devices attached
+# emulator-5556    device
+```
+
+#### Multiple Emulators (Team Members)
+
+If multiple team members need to work simultaneously, each can start their own emulator with a different port:
+
+```bash
+# Team member 1
+emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8556 -port 5554
+
+# Team member 2
+emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8557 -port 5556
+
+# Team member 3
+emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8558 -port 5558
+```
+
+**Note:** Each emulator instance needs:
+- Unique ADB port (`-port`): 5554, 5556, 5558, etc.
+- Unique GRPC port (`-grpc`): 8556, 8557, 8558, etc.
+
+### Step 2: Prerequisites
+
+1. **Android emulator must be running** (see Step 1 above)
    ```bash
-   # Check if emulator is connected
+   # Verify emulator is connected
    adb devices
    ```
 
@@ -29,121 +85,22 @@ Both scripts allow you to control an Android emulator running on a Linux server 
 
 ### Choosing the Right Script
 
-| Feature | ADB Script | scrcpy Script |
-|---------|-----------|---------------|
-| **Performance** | ~10 FPS | 30-60 FPS |
-| **Update Method** | Polling (auto-refresh) | Real-time streaming |
-| **Dependencies** | ADB only | ADB + scrcpy + Xvfb + x11vnc + websockify |
-| **Setup Complexity** | Simple | More complex |
-| **Use Case** | Quick testing, basic control | Smooth interaction, demos |
+| Feature | scrcpy Script (Recommended) | ADB Script |
+|---------|------------------------------|------------|
+| **Performance** | 30-60 FPS | ~10 FPS |
+| **Update Method** | Real-time streaming | Polling (auto-refresh) |
+| **Latency** | Low (~30-50ms) | Higher (~100-200ms) |
+| **User Experience** | Smooth, responsive | Basic, some lag |
+| **Dependencies** | ADB + scrcpy + Xvfb + x11vnc + websockify | ADB only |
+| **Setup Complexity** | More complex | Simple |
+| **Use Case** | Smooth interaction, demos, team collaboration | Quick testing, basic control |
+| **Multi-Device Support** | ✅ Yes (device selection) | ⚠️ Limited |
 
-**Recommendation:** Use `start_web_access_scrcpy.py` for better performance, unless you have dependency issues.
-
----
-
-## Script 1: ADB Web Access (`start_web_access_adb.py`)
-
-### Overview
-
-Uses ADB `screencap` and `input` commands to capture screenshots and send input events. Screenshots are automatically refreshed every ~100ms (~10 FPS).
-
-### Requirements
-
-- ✅ **ADB** (Android Debug Bridge)
-- ✅ **Android emulator running** and connected via ADB
-- ✅ **`adb_web_server.py`** (must exist in the same directory)
-
-### Installation
-
-No additional installation needed if ADB is already available.
-
-### Usage
-
-#### Basic Usage
-
-```bash
-# Start the web server (default port: 6080)
-python3 start_web_access_adb.py
-```
-
-#### Custom Port
-
-```bash
-# Use a different port
-python3 start_web_access_adb.py --web-port 8080
-```
-
-### Output
-
-When started successfully, you'll see:
-
-```
-======================================================================
-🚀 ADB WEB SERVER READY
-======================================================================
-
-🌐 Open in your web browser:
-   Local:   http://localhost:6080
-   Network: http://202.78.161.193:6080
-
-📱 Method: ADB Screencap/Input
-🌍 Web Port: 6080
-
-💡 Usage:
-   - Screenshot updates: ~10 FPS (automatic polling)
-   - Click on screen to interact with emulator
-   - Type text in the input field and click 'Send Text'
-   - Use Back/Home buttons for navigation
-   - Press Ctrl+C here to stop
-
-⚠️  Note: This uses screenshot polling, so may have some lag.
-   For better performance, use start_web_access_scrcpy.py
-======================================================================
-```
-
-### Accessing from Remote Machine
-
-#### Option 1: Direct Access (if firewall allows)
-
-From your Mac browser, open:
-```
-http://202.78.161.193:6080
-```
-
-#### Option 2: SSH Tunnel (recommended)
-
-On your Mac terminal:
-```bash
-ssh -L 6080:localhost:6080 ligu@202.78.161.193
-```
-
-Then open in browser:
-```
-http://localhost:6080
-```
-
-### Web Interface Features
-
-- **Screen Display**: Shows current emulator screen (auto-refreshes)
-- **Click/Tap**: Click anywhere on the screen to tap that location
-- **Text Input**: Type text in the input field and click "Send Text"
-  - **Note**: This method is reliable for all text input, including special characters
-- **Navigation Buttons**: Back, Home, Recent Apps buttons
-- **Refresh Control**: Manual refresh button (though auto-refresh is enabled)
-
-### Text Input Tips
-
-- **Best for**: Reliable text input, special characters, passwords
-- **Works with**: All input field types
-- **Alternative**: You can also use `adb shell input text "your text"` from terminal
-
-### Stopping the Server
-
-Press `Ctrl+C` in the terminal where the script is running.
+**Recommendation:** Use `start_web_access_scrcpy.py` for the best experience. It provides real-time streaming, low latency, and supports multiple team members working simultaneously. Only use `start_web_access_adb.py` if you have dependency issues or need a simpler setup.
 
 ---
 
-## Script 2: scrcpy Web Access (`start_web_access_scrcpy.py`)
+## Script 1: scrcpy Web Access (`start_web_access_scrcpy.py`) - Recommended
 
 ### Overview
 
@@ -189,11 +146,37 @@ which websockify
 
 ### Usage
 
+#### List Available Devices
+
+```bash
+# List all connected emulators/devices
+python3 start_web_access_scrcpy.py --list-devices
+
+# Output example:
+# Connected devices:
+#   1. emulator-5554
+#   2. emulator-5556
+#   3. emulator-5558
+```
+
 #### Basic Usage
 
 ```bash
 # Start with default ports (web: 6080, VNC: 5901)
+# Automatically connects to first available device
 python3 start_web_access_scrcpy.py
+```
+
+#### Select Specific Device (Multiple Emulators)
+
+When multiple emulators are running, specify which one to connect to:
+
+```bash
+# Connect to specific emulator
+python3 start_web_access_scrcpy.py --device-serial emulator-5556
+
+# With custom ports
+python3 start_web_access_scrcpy.py --device-serial emulator-5556 --web-port 6081 --vnc-port 5902
 ```
 
 #### Custom Ports
@@ -201,6 +184,21 @@ python3 start_web_access_scrcpy.py
 ```bash
 # Custom web port and VNC port
 python3 start_web_access_scrcpy.py --web-port 6090 --vnc-port 5902
+```
+
+#### Multiple Team Members Example
+
+Each team member can run their own instance targeting their emulator:
+
+```bash
+# Team member 1
+python3 start_web_access_scrcpy.py --device-serial emulator-5554 --web-port 6080 --vnc-port 5901
+
+# Team member 2
+python3 start_web_access_scrcpy.py --device-serial emulator-5556 --web-port 6081 --vnc-port 5902
+
+# Team member 3
+python3 start_web_access_scrcpy.py --device-serial emulator-5558 --web-port 6082 --vnc-port 5903
 ```
 
 ### Output
@@ -314,18 +312,121 @@ Press `Ctrl+C` in the terminal. The script will clean up all processes (Xvfb, sc
 
 ---
 
-## Comparison: ADB vs scrcpy
+## Script 2: ADB Web Access (`start_web_access_adb.py`)
 
-| Aspect | ADB Script | scrcpy Script |
-|--------|-----------|---------------|
-| **Performance** | ~10 FPS | 30-60 FPS |
-| **Latency** | Higher (~100ms) | Lower (~30ms) |
-| **CPU Usage** | Lower | Higher |
-| **Memory Usage** | Lower | Higher |
-| **Setup** | Simple | More complex |
-| **Dependencies** | ADB only | Multiple tools |
-| **Network Usage** | Lower (polling) | Higher (streaming) |
-| **Best For** | Quick testing | Smooth interaction |
+### Overview
+
+Uses ADB `screencap` and `input` commands to capture screenshots and send input events. Screenshots are automatically refreshed every ~100ms (~10 FPS).
+
+### Requirements
+
+- ✅ **ADB** (Android Debug Bridge)
+- ✅ **Android emulator running** and connected via ADB
+- ✅ **`adb_web_server.py`** (must exist in the same directory)
+
+### Installation
+
+No additional installation needed if ADB is already available.
+
+### Usage
+
+#### Basic Usage
+
+```bash
+# Start the web server (default port: 6080)
+python3 start_web_access_adb.py
+```
+
+#### Custom Port
+
+```bash
+# Use a different port
+python3 start_web_access_adb.py --web-port 8080
+```
+
+### Output
+
+When started successfully, you'll see:
+
+```
+======================================================================
+🚀 ADB WEB SERVER READY
+======================================================================
+
+🌐 Open in your web browser:
+   Local:   http://localhost:6080
+   Network: http://202.78.161.193:6080
+
+📱 Method: ADB Screencap/Input
+🌍 Web Port: 6080
+
+💡 Usage:
+   - Screenshot updates: ~10 FPS (automatic polling)
+   - Click on screen to interact with emulator
+   - Type text in the input field and click 'Send Text'
+   - Use Back/Home buttons for navigation
+   - Press Ctrl+C here to stop
+
+⚠️  Note: This uses screenshot polling, so may have some lag.
+   For better performance, use start_web_access_scrcpy.py
+======================================================================
+```
+
+### Accessing from Remote Machine
+
+#### Option 1: Direct Access (if firewall allows)
+
+From your Mac browser, open:
+```
+http://202.78.161.193:6080
+```
+
+#### Option 2: SSH Tunnel (recommended)
+
+On your Mac terminal:
+```bash
+ssh -L 6080:localhost:6080 ligu@202.78.161.193
+```
+
+Then open in browser:
+```
+http://localhost:6080
+```
+
+### Web Interface Features
+
+- **Screen Display**: Shows current emulator screen (auto-refreshes)
+- **Click/Tap**: Click anywhere on the screen to tap that location
+- **Text Input**: Type text in the input field and click "Send Text"
+  - **Note**: This method is reliable for all text input, including special characters
+- **Navigation Buttons**: Back, Home, Recent Apps buttons
+- **Refresh Control**: Manual refresh button (though auto-refresh is enabled)
+
+### Text Input Tips
+
+- **Best for**: Reliable text input, special characters, passwords
+- **Works with**: All input field types
+- **Alternative**: You can also use `adb shell input text "your text"` from terminal
+
+### Stopping the Server
+
+Press `Ctrl+C` in the terminal where the script is running.
+
+---
+
+## Comparison: scrcpy vs ADB
+
+| Aspect | scrcpy Script (Recommended) | ADB Script |
+|--------|------------------------------|------------|
+| **Performance** | 30-60 FPS | ~10 FPS |
+| **Latency** | Lower (~30-50ms) | Higher (~100-200ms) |
+| **CPU Usage** | Higher | Lower |
+| **Memory Usage** | Higher | Lower |
+| **Setup** | More complex | Simple |
+| **Dependencies** | Multiple tools | ADB only |
+| **Network Usage** | Higher (streaming) | Lower (polling) |
+| **Best For** | Smooth interaction, team collaboration | Quick testing |
+| **Multi-Device Support** | ✅ Yes (device selection) | ⚠️ Limited |
 
 ---
 
@@ -373,8 +474,22 @@ For detailed troubleshooting, see `KEYBOARD_TROUBLESHOOTING.md`
 # Check if emulator is running
 adb devices
 
-# If not, start the emulator first
+# If not, start the emulator first:
+emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8556 -port 5556
+
+# Wait for emulator to boot (check with: adb devices)
 # Then run the web access script again
+```
+
+### Issue: "Multiple devices detected" (scrcpy script)
+
+**Solution:**
+```bash
+# List available devices
+python3 start_web_access_scrcpy.py --list-devices
+
+# Specify which device to use
+python3 start_web_access_scrcpy.py --device-serial emulator-5556
 ```
 
 ### Issue: "Port already in use"
@@ -428,7 +543,9 @@ pkill -f start_web_access_scrcpy
 
 ### Multiple Instances
 
-You can run multiple instances on different ports:
+You can run multiple instances on different ports. This is especially useful when multiple team members are working with different emulators:
+
+#### ADB Method - Multiple Instances
 
 ```bash
 # Terminal 1
@@ -437,6 +554,24 @@ python3 start_web_access_adb.py --web-port 6080
 # Terminal 2
 python3 start_web_access_adb.py --web-port 6081
 ```
+
+#### scrcpy Method - Multiple Instances with Device Selection
+
+```bash
+# Team member 1 - emulator on port 5554
+python3 start_web_access_scrcpy.py --device-serial emulator-5554 --web-port 6080 --vnc-port 5901
+
+# Team member 2 - emulator on port 5556
+python3 start_web_access_scrcpy.py --device-serial emulator-5556 --web-port 6081 --vnc-port 5902
+
+# Team member 3 - emulator on port 5558
+python3 start_web_access_scrcpy.py --device-serial emulator-5558 --web-port 6082 --vnc-port 5903
+```
+
+**Important:** Each team member should:
+1. Start their emulator with a unique `-port` (e.g., 5554, 5556, 5558)
+2. Use `--device-serial` to specify their emulator
+3. Use unique `--web-port` and `--vnc-port` to avoid conflicts
 
 ### Custom Configuration
 
@@ -473,15 +608,34 @@ python3 start_web_access_scrcpy.py --help
 
 ## Summary
 
+### Complete Workflow
+
+| Step | Task | Command |
+|------|------|---------|
+| **1** | **Start emulator** | `emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8556 -port 5556` |
+| **2** | **Verify emulator** | `adb devices` |
+| **3** | **List devices** (scrcpy only) | `python3 start_web_access_scrcpy.py --list-devices` |
+| **4** | **Start scrcpy web access** (Recommended) | `python3 start_web_access_scrcpy.py` |
+| **4** | **Start scrcpy with device** | `python3 start_web_access_scrcpy.py --device-serial emulator-5556` |
+| **4** | **Start ADB web access** | `python3 start_web_access_adb.py` |
+| **5** | **Custom port** | Add `--web-port <port>` |
+| **6** | **Access from Mac** | `http://server-ip:port` or `http://localhost:port` (via SSH tunnel) |
+| **7** | **Stop server** | Press `Ctrl+C` |
+
+### Quick Reference
+
 | Task | Command |
 |------|---------|
+| **Start emulator** | `emulator -avd AWAvd -snapshot clean -no-window -no-audio -skip-adb-auth -no-boot-anim -gpu auto -no-snapshot-save -read-only -grpc 8556 -port 5556` |
+| **Start scrcpy web access** (Recommended) | `python3 start_web_access_scrcpy.py` |
+| **List devices** | `python3 start_web_access_scrcpy.py --list-devices` |
+| **Select device** | `python3 start_web_access_scrcpy.py --device-serial emulator-5556` |
 | **Start ADB web access** | `python3 start_web_access_adb.py` |
-| **Start scrcpy web access** | `python3 start_web_access_scrcpy.py` |
 | **Custom port** | Add `--web-port <port>` |
 | **Access from Mac** | `http://server-ip:port` or `http://localhost:port` (via SSH tunnel) |
 | **Stop server** | Press `Ctrl+C` |
 
 Choose the script that best fits your needs:
-- **Simple and quick**: Use `start_web_access_adb.py`
-- **Smooth and responsive**: Use `start_web_access_scrcpy.py`
+- **Smooth and responsive** (Recommended): Use `start_web_access_scrcpy.py` - Best for interactive use, demos, and team collaboration
+- **Simple and quick**: Use `start_web_access_adb.py` - Use only if you have dependency issues or need a simpler setup
 
