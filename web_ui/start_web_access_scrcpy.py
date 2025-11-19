@@ -305,6 +305,9 @@ class ScrcpyWebAccess:
             # Wait a bit for display to be ready
             time.sleep(1)
             
+            # Use user-specific log file to avoid permission conflicts in /tmp
+            log_file = os.path.join(os.path.expanduser("~"), f".x11vnc_{self.vnc_port}.log")
+            
             cmd = [
                 "x11vnc",
                 "-display", display,
@@ -318,7 +321,7 @@ class ScrcpyWebAccess:
                 "-wait", "10",  # Wait for clients
                 "-defer", "10",  # Defer updates
                 "-bg",  # Run in background
-                "-o", "/tmp/x11vnc.log"  # Log file for debugging
+                "-o", log_file  # Log file for debugging (user-specific)
             ]
             
             logger.info("Executing: %s", " ".join(cmd))
@@ -361,11 +364,15 @@ class ScrcpyWebAccess:
                 if stderr:
                     logger.error("stderr: %s", stderr.decode()[:500])
                 # Try to read log file
-                if os.path.exists("/tmp/x11vnc.log"):
-                    with open("/tmp/x11vnc.log", "r") as f:
-                        log_content = f.read()[-1000:]  # Last 1000 chars
-                        if log_content:
-                            logger.error("x11vnc log (last part): %s", log_content)
+                log_file = os.path.join(os.path.expanduser("~"), f".x11vnc_{self.vnc_port}.log")
+                if os.path.exists(log_file):
+                    try:
+                        with open(log_file, "r") as f:
+                            log_content = f.read()[-1000:]  # Last 1000 chars
+                            if log_content:
+                                logger.error("x11vnc log (last part): %s", log_content)
+                    except Exception as e:
+                        logger.warning("Could not read log file: %s", str(e))
                 return False
                 
         except Exception as e:
