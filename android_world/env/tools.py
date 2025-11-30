@@ -20,6 +20,7 @@ import time
 from typing import Optional, Union
 
 from android_world.env import actuation
+from android_world.env import actuation_plus
 from android_world.env import adb_utils
 from android_world.env import android_world_controller
 from android_world.utils import contacts_utils
@@ -48,6 +49,36 @@ class AndroidToolController:
 
   def click_element(self, element_text: str):
     actuation.find_and_click_element(element_text, self._env)
+
+  def click_element_by_image_text(
+      self,
+      image_widget_classes: list[str] | None = None,
+      timeout_sec: float = 10.0,
+  ):
+    """Click a clickable image widget (ImageButton, ImageView, etc.).
+
+    This method finds clickable image widgets of the specified class and clicks
+    the first one found. No OCR is used - it simply identifies clickable image
+    widgets by their class name.
+
+    Args:
+      image_widget_classes: List of class names to consider (e.g.,
+          ["android.widget.ImageButton"]). If None, uses default set.
+      timeout_sec: Maximum time to wait for element to appear.
+
+    Example:
+      ```python
+      # Click the first clickable ImageButton found
+      controller.click_element_by_image_text(
+          image_widget_classes=["android.widget.ImageButton"]
+      )
+      ```
+    """
+    actuation_plus.find_and_click_element_by_image_text(
+        self._env,
+        image_widget_classes=image_widget_classes,
+        timeout_sec=timeout_sec,
+    )
 
   def open_web_page(self, url: str):
     """Open a web page in the default browser on an Android device.
