@@ -242,6 +242,47 @@ class ScrcpyWebAccess:
             display = f":{self.display_num}"
             logger.info(f"Starting scrcpy on virtual display {display}")
             
+            # Verify device is still connected and ready before starting
+            if self.device_serial:
+                devices = self.list_devices()
+                if self.device_serial not in devices:
+                    logger.error(f"Device {self.device_serial} is no longer connected!")
+                    logger.error(f"Available devices: {', '.join(devices)}")
+                    return False
+                logger.info(f"Verified device {self.device_serial} is connected")
+                
+                # Test device accessibility with a simple command
+                try:
+                    result = subprocess.run(
+                        ["adb", "-s", self.device_serial, "shell", "echo", "test"],
+                        capture_output=True,
+                        timeout=5
+                    )
+                    if result.returncode != 0:
+                        logger.error(f"Device {self.device_serial} is not responding to ADB commands")
+                        return False
+                    logger.info(f"Device {self.device_serial} is ready")
+                except subprocess.TimeoutExpired:
+                    logger.error(f"Device {self.device_serial} timed out - may be busy or unresponsive")
+                    return False
+                except Exception as e:
+                    logger.warning(f"Could not test device accessibility: {e}")
+                    # Continue anyway, might still work
+            
+            # Check if another scrcpy instance is already running for this device
+            if self.device_serial:
+                try:
+                    result = subprocess.run(
+                        ["pgrep", "-f", f"scrcpy.*{self.device_serial}"],
+                        capture_output=True,
+                        timeout=2
+                    )
+                    if result.returncode == 0:
+                        logger.warning(f"Another scrcpy instance may be running for {self.device_serial}")
+                        logger.warning("Consider stopping it first: pkill -f 'scrcpy.*{self.device_serial}'")
+                except Exception:
+                    pass  # pgrep not available or failed, continue anyway
+            
             # Set environment variables
             env = os.environ.copy()
             env["DISPLAY"] = display
@@ -271,6 +312,8 @@ class ScrcpyWebAccess:
                 cmd.extend(["--serial", self.device_serial])
             
             logger.info("Executing: DISPLAY=%s PATH=%s %s", display, env["PATH"][:100], " ".join(cmd))
+            
+            # Start scrcpy process
             self.scrcpy_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -278,22 +321,53 @@ class ScrcpyWebAccess:
                 env=env
             )
             
-            time.sleep(5)  # Give scrcpy more time to start and render
+            # Wait and check process status with better diagnostics
+            time.sleep(2)  # Initial wait
             
+            # Check if process is still running
+            if self.scrcpy_process.poll() is not None:
+                # Process exited, get output
+                logger.error("scrcpy process exited immediately")
+                stdout, stderr = self.scrcpy_process.communicate()
+                if stdout:
+                    output = stdout.decode('utf-8', errors='replace')
+                    logger.error("stdout: %s", output[:1000])
+                if stderr:
+                    error = stderr.decode('utf-8', errors='replace')
+                    logger.error("stderr: %s", error[:1000])
+                    # Check for common error patterns
+                    if "Device disconnected" in error:
+                        logger.error("Device disconnected during scrcpy startup")
+                        logger.error("Possible causes:")
+                        logger.error("  1. Device is busy or in use by another process")
+                        logger.error("  2. Device became unavailable")
+                        logger.error("  3. ADB connection issue")
+                        if self.device_serial:
+                            logger.error(f"  4. Try: adb -s {self.device_serial} devices")
+                    if "Could not open icon" in error:
+                        logger.warning("Icon file warning (non-critical): scrcpy will continue")
+                return False
+            
+            # Give scrcpy more time to establish connection
+            time.sleep(3)
+            
+            # Final check
             if self.scrcpy_process.poll() is None:
                 logger.info("✓ scrcpy started successfully")
                 return True
             else:
-                logger.error("scrcpy failed to start")
+                logger.error("scrcpy process died after initial startup")
                 stdout, stderr = self.scrcpy_process.communicate()
                 if stdout:
-                    logger.error("stdout: %s", stdout.decode()[:500])
+                    logger.error("stdout: %s", stdout.decode('utf-8', errors='replace')[:1000])
                 if stderr:
-                    logger.error("stderr: %s", stderr.decode()[:500])
+                    logger.error("stderr: %s", stderr.decode('utf-8', errors='replace')[:1000])
                 return False
                 
         except Exception as e:
             logger.error("Failed to start scrcpy: %s", str(e))
+            import traceback
+            logger.debug("Traceback: %s", traceback.format_exc())
             return False
     
     def start_x11vnc(self) -> bool:
@@ -304,6 +378,9 @@ class ScrcpyWebAccess:
             
             # Wait a bit for display to be ready
             time.sleep(1)
+            
+            # Use user-specific log file to avoid permission conflicts in /tmp
+            log_file = os.path.join(os.path.expanduser("~"), f".x11vnc_{self.vnc_port}.log")
             
             cmd = [
                 "x11vnc",
@@ -318,7 +395,7 @@ class ScrcpyWebAccess:
                 "-wait", "10",  # Wait for clients
                 "-defer", "10",  # Defer updates
                 "-bg",  # Run in background
-                "-o", "/tmp/x11vnc.log"  # Log file for debugging
+                "-o", log_file  # Log file for debugging (user-specific)
             ]
             
             logger.info("Executing: %s", " ".join(cmd))
@@ -360,12 +437,16 @@ class ScrcpyWebAccess:
                     logger.error("stdout: %s", stdout.decode()[:500])
                 if stderr:
                     logger.error("stderr: %s", stderr.decode()[:500])
-                # Try to read log file
-                if os.path.exists("/tmp/x11vnc.log"):
-                    with open("/tmp/x11vnc.log", "r") as f:
-                        log_content = f.read()[-1000:]  # Last 1000 chars
-                        if log_content:
-                            logger.error("x11vnc log (last part): %s", log_content)
+                # Try to read log file (user-specific path)
+                log_file = os.path.join(os.path.expanduser("~"), f".x11vnc_{self.vnc_port}.log")
+                if os.path.exists(log_file):
+                    try:
+                        with open(log_file, "r") as f:
+                            log_content = f.read()[-1000:]  # Last 1000 chars
+                            if log_content:
+                                logger.error("x11vnc log (last part): %s", log_content)
+                    except Exception as e:
+                        logger.warning("Could not read log file: %s", str(e))
                 return False
                 
         except Exception as e:
