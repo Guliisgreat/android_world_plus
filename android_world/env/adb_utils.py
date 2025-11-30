@@ -98,6 +98,12 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     'walmart': 'com.walmart.android/com.walmart.glass.integration.splash.SplashActivity',
     'whatsapp|wa': 'com.whatsapp/com.whatsapp.Main',
     'wikipedia': 'org.wikipedia/org.wikipedia.main.MainActivity',
+    'snapseed': (
+        'com.niksoftware.snapseed/com.google.android.apps.snapseed.MainActivity'
+    ),
+    'calculator': (
+        'com.google.android.calculator/com.android.calculator2.Calculator'
+    ),
     'instagram|ig': (
         'com.instagram.android/com.instagram.mainactivity.MainActivity'
     ),

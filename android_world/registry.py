@@ -37,8 +37,11 @@ from android_world.task_evals.single import retro_music
 from android_world.task_evals.single import simple_draw_pro
 from android_world.task_evals.single import simple_gallery_pro
 from android_world.task_evals.single import sms
+from android_world.task_evals.single import snapseed
 from android_world.task_evals.single import system
 from android_world.task_evals.single import vlc
+from android_world.task_evals.single import wikipedia
+from android_world.task_evals.single import calculator
 from android_world.task_evals.single.calendar import calendar
 
 
@@ -114,6 +117,26 @@ class TaskRegistry:
       browser.BrowserDraw,
       browser.BrowserMaze,
       browser.BrowserMultiply,
+      # Calculator tasks.
+      calculator.CalculatorConvert45DegreesToRadians,
+      calculator.CalculatorGeometricMean,
+      calculator.CalculatorHarmonicMean,
+      calculator.CalculatorInput1,
+      calculator.CalculatorInput10Choose2,
+      calculator.CalculatorInput17Times23,
+      calculator.CalculatorInput1Plus1,
+      calculator.CalculatorInput2Plus24Div3,
+      calculator.CalculatorInput3Times5,
+      calculator.CalculatorInput5Choose2,
+      calculator.CalculatorInputCos180,
+      calculator.CalculatorInputCos60,
+      calculator.CalculatorInputFactorial6,
+      calculator.CalculatorInputLn1234,
+      calculator.CalculatorInputPercent50Of28,
+      calculator.CalculatorInputSqrt25,
+      calculator.CalculatorOpen,
+      calculator.CalculatorSumFirst5Fibonacci,
+      calculator.CalculatorSumFirst5Primes,
       calendar.SimpleCalendarAddOneEvent,
       calendar.SimpleCalendarAddOneEventInTwoWeeks,
       calendar.SimpleCalendarAddOneEventRelativeDay,
@@ -184,7 +207,36 @@ class TaskRegistry:
       sms.SimpleSmsSend,
       sms.SimpleSmsSendClipboardContent,
       sms.SimpleSmsSendReceivedAddress,
+      snapseed.SnapseedTask1,
+      snapseed.SnapseedTask10,
+      snapseed.SnapseedTask11,
+      snapseed.SnapseedTask2,
+      snapseed.SnapseedTask3,
+      snapseed.SnapseedTask4,
+      snapseed.SnapseedTask5,
+      snapseed.SnapseedTask6,
+      snapseed.SnapseedTask7,
+      snapseed.SnapseedTask8,
+      snapseed.SnapseedTask9,
       system.OpenAppTaskEval,
+      # Wikipedia tasks.
+      # wikipedia.WikipediaDecreaseTextSize50,
+      # wikipedia.WikipediaDisableDayTopics,
+      # wikipedia.WikipediaDisableEvenIndices,
+      # wikipedia.WikipediaDisableFeaturedArticleFeed,
+      # wikipedia.WikipediaDisableFeedAndTextSize180,
+      # wikipedia.WikipediaDisableFeedAndTextSize50,
+      # wikipedia.WikipediaDisableHistoryTopics,
+      # wikipedia.WikipediaDisableOddIndices,
+      wikipedia.WikipediaDisablePreviewAndFeed,
+      # wikipedia.WikipediaDisablePrimeIndices,
+      # wikipedia.WikipediaDisableTop1AndRandomizer,
+      # wikipedia.WikipediaDisableTop2AndRandomizer,
+      # wikipedia.WikipediaDisableTop2Topics,
+      wikipedia.WikipediaGoToSavedTab,
+      wikipedia.WikipediaGoToSearchTab,
+      wikipedia.WikipediaIncreaseTextSize180,
+      wikipedia.WikipediaOpen,
       system.SystemBluetoothTurnOff,
       system.SystemBluetoothTurnOffVerify,
       system.SystemBluetoothTurnOn,
