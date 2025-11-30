@@ -269,6 +269,8 @@ class Gpt4Wrapper(LlmWrapper, MultimodalLlmWrapper):
     self.max_retry = min(max_retry, 5)
     self.temperature = temperature
     self.model = model_name
+    # GPT-5 models only support default temperature (1), not custom values
+    self.is_gpt5 = model_name.startswith('gpt-5')
 
   @classmethod
   def encode_image(cls, image: np.ndarray) -> str:
@@ -290,15 +292,23 @@ class Gpt4Wrapper(LlmWrapper, MultimodalLlmWrapper):
 
     payload = {
         'model': self.model,
-        'temperature': self.temperature,
         'messages': [{
             'role': 'user',
             'content': [
                 {'type': 'text', 'text': text_prompt},
             ],
         }],
-        'max_tokens': 1000,
     }
+    
+    # GPT-5 models only support default temperature (1), not custom values
+    if not self.is_gpt5:
+      payload['temperature'] = self.temperature
+    
+    # GPT-5 models require max_completion_tokens instead of max_tokens
+    if self.is_gpt5:
+      payload['max_completion_tokens'] = 1000
+    else:
+      payload['max_tokens'] = 1000
 
     # Gpt-4v supports multiple images, just need to insert them in the content
     # list.
