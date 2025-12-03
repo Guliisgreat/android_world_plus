@@ -437,6 +437,7 @@ class ScrcpyWebAccess:
                     logger.error("stdout: %s", stdout.decode()[:500])
                 if stderr:
                     logger.error("stderr: %s", stderr.decode()[:500])
+                    
                 # Try to read log file (user-specific path)
                 log_file = os.path.join(os.path.expanduser("~"), f".x11vnc_{self.vnc_port}.log")
                 if os.path.exists(log_file):

@@ -24,14 +24,17 @@ from android_world.task_evals.information_retrieval import information_retrieval
 from android_world.task_evals.information_retrieval import information_retrieval_registry
 from android_world.task_evals.miniwob import miniwob_registry
 from android_world.task_evals.single import audio_recorder
+from android_world.task_evals.single import bluecoins
 from android_world.task_evals.single import browser
 from android_world.task_evals.single import camera
 from android_world.task_evals.single import clock
 from android_world.task_evals.single import contacts
 from android_world.task_evals.single import expense
 from android_world.task_evals.single import files
+from android_world.task_evals.single import maps_me
 from android_world.task_evals.single import markor
 from android_world.task_evals.single import osmand
+from android_world.task_evals.single import pimusic
 from android_world.task_evals.single import recipe
 from android_world.task_evals.single import retro_music
 from android_world.task_evals.single import simple_draw_pro
@@ -114,6 +117,22 @@ class TaskRegistry:
       # keep-sorted start
       audio_recorder.AudioRecorderRecordAudio,
       audio_recorder.AudioRecorderRecordAudioWithFileName,
+      # Bluecoins personal finance tasks.
+      bluecoins.BluecoinsQuerySpendingOnDate,
+      bluecoins.BluecoinsQuerySpendingReason,
+      bluecoins.BluecoinsQueryTotalSpendingOnDate,
+      bluecoins.BluecoinsQueryTransactionCount,
+      bluecoins.BluecoinsQueryCategorySpending,
+      bluecoins.BluecoinsAddExpense,
+      bluecoins.BluecoinsAddIncomeWithLabel,
+      bluecoins.BluecoinsAddExpenseOnDate,
+      bluecoins.BluecoinsAddIncomeOnDateWithNote,
+      bluecoins.BluecoinsAddExpenseOnDateWithLabel,
+      bluecoins.BluecoinsEditExpenseAmount,
+      bluecoins.BluecoinsEditIncomeDateAndAmount,
+      bluecoins.BluecoinsEditTransactionType,
+      bluecoins.BluecoinsEditTransactionTypeAmountNote,
+      bluecoins.BluecoinsEditExpenseDateAmountNote,
       browser.BrowserDraw,
       browser.BrowserMaze,
       browser.BrowserMultiply,
@@ -163,6 +182,22 @@ class TaskRegistry:
       expense.ExpenseDeleteSingle,
       files.FilesDeleteFile,
       files.FilesMoveFile,
+      # MAPS.ME navigation tasks.
+      maps_me.MapsMeCheckWalkingDistanceTime,
+      maps_me.MapsMeCheckDrivingDistanceTime,
+      maps_me.MapsMeCheckRidingTime,
+      maps_me.MapsMeCheckPublicTransportRoute,
+      maps_me.MapsMeCompareRidingVsPublicTransport,
+      maps_me.MapsMeCheckNearestPlace,
+      maps_me.MapsMeCheckNearestPlaceWalkTime,
+      maps_me.MapsMeCheckNearestHotel,
+      maps_me.MapsMeCheckNearestPlaceDriveTime,
+      maps_me.MapsMeAddWorkPlace,
+      maps_me.MapsMeNavigateToLocation,
+      maps_me.MapsMeNavigateToStanford,
+      maps_me.MapsMeNavigateToUniversitySouth,
+      maps_me.MapsMeNavigateToOpenAI,
+      maps_me.MapsMeNavigateToBerkeley,
       markor.MarkorAddNoteHeader,
       markor.MarkorChangeNoteContent,
       markor.MarkorCreateFolder,
@@ -182,6 +217,19 @@ class TaskRegistry:
       osmand.OsmAndFavorite,
       osmand.OsmAndMarker,
       osmand.OsmAndTrack,
+      # Pi Music Player tasks.
+      pimusic.PiMusicQueryTotalSongs,
+      pimusic.PiMusicQueryArtistSongCount,
+      pimusic.PiMusicQuerySongAlbum,
+      pimusic.PiMusicQueryLongestSongDuration,
+      pimusic.PiMusicQuerySortedSongsByTitle,
+      pimusic.PiMusicQueryArtistTotalDuration,
+      pimusic.PiMusicPlayFromPlaylist,
+      pimusic.PiMusicSortByDurationDescending,
+      pimusic.PiMusicCreatePlaylist,
+      pimusic.PiMusicPauseAndSeek,
+      pimusic.PiMusicPlaySongByTitleArtist,
+      pimusic.PiMusicSortByDurationAscending,
       recipe.RecipeAddMultipleRecipes,
       recipe.RecipeAddMultipleRecipesFromImage,
       recipe.RecipeAddMultipleRecipesFromMarkor,
