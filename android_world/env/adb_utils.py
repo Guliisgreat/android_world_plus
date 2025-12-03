@@ -150,6 +150,15 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     'pro expense|pro expense app': (
         'com.arduia.expense/com.arduia.expense.ui.MainActivity'
     ),
+    'bluecoins': (
+        'com.rammigsoftware.bluecoins/.ui.activities.main.MainActivity'
+    ),
+    'maps.me|mapsme': (
+        'com.mapswithme.maps.pro/.DefaultIcon'
+    ),
+    'pi music player|pi music|pimusic': (
+        'com.Project100Pi.themusicplayer/com.project100Pi.themusicplayer.ui.activity.SplashActivity'
+    ),
     'broccoli|broccoli app|broccoli recipe app|recipe app': (
         'com.flauschcode.broccoli/com.flauschcode.broccoli.MainActivity'
     ),

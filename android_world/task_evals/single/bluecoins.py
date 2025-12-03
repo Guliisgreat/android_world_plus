@@ -48,10 +48,10 @@ _TRANSACTION_TYPE_NEW_ACCOUNT = 2
 class BluecoinsTransaction(sqlite_schema_utils.SQLiteRow):
   """Represents a transaction in the Bluecoins database.
 
-  Verified schema from actual database (bluecoins.fydb):
+  Schema from actual database (bluecoins.fydb) - all 33 columns:
     - transactionsTableID: Primary key
     - itemID: Foreign key to ITEMTABLE
-    - amount: Transaction amount (INTEGER, stored as actual value)
+    - amount: Transaction amount (INTEGER)
     - transactionCurrency: Currency code (e.g., "USD", "CNY")
     - conversionRateNew: Exchange rate
     - date: Date string in format "YYYY-MM-DD HH:MM:SS"
@@ -60,7 +60,11 @@ class BluecoinsTransaction(sqlite_schema_utils.SQLiteRow):
     - accountID: Foreign key to ACCOUNTSTABLE
     - notes: Additional notes
     - status: Status flag
+    - accountReference, accountPairID, uidPairID: Account references
     - deletedTransaction: Soft delete flag
+    - newSplitTransactionID, transferGroupID: Split/transfer IDs
+    - reminder*: Reminder-related fields
+    - creditCardInstallment, dataExtraColumnString1: Extra fields
   """
 
   transactionsTableID: Optional[int] = None
@@ -74,7 +78,28 @@ class BluecoinsTransaction(sqlite_schema_utils.SQLiteRow):
   accountID: int = 1
   notes: str = ''
   status: int = 0
+  accountReference: Optional[int] = None
+  accountPairID: Optional[int] = None
+  uidPairID: Optional[int] = None
   deletedTransaction: int = 0
+  newSplitTransactionID: Optional[int] = None
+  transferGroupID: Optional[int] = None
+  reminderTransaction: Optional[int] = None
+  reminderGroupID: Optional[int] = None
+  reminderFrequency: Optional[int] = None
+  reminderRepeatEvery: Optional[int] = None
+  reminderEndingType: Optional[int] = None
+  reminderStartDate: Optional[str] = None
+  reminderEndDate: Optional[str] = None
+  reminderAfterNoOfOccurences: Optional[int] = None
+  reminderAutomaticLogTransaction: Optional[int] = None
+  reminderRepeatByDayOfMonth: Optional[int] = None
+  reminderExcludeWeekend: Optional[int] = None
+  reminderWeekDayMoveSetting: Optional[int] = None
+  reminderUnbilled: Optional[int] = None
+  creditCardInstallment: Optional[int] = None
+  reminderVersion: Optional[int] = None
+  dataExtraColumnString1: Optional[str] = None
 
   @property
   def amount_float(self) -> float:
@@ -248,7 +273,7 @@ class _BluecoinsQuery(_Bluecoins):
 class BluecoinsQuerySpendingOnDate(_BluecoinsQuery):
   """Query: How much did I spend on a specific date?"""
 
-  template = 'Could you tell me how much I spent on {date}?'
+  template = 'In the Bluecoins app, could you tell me how much I spent on {date}?'
   complexity = 2
 
   @property
@@ -266,7 +291,7 @@ class BluecoinsQuerySpendingOnDate(_BluecoinsQuery):
 class BluecoinsQuerySpendingReason(_BluecoinsQuery):
   """Query: What was the reason behind a specific spending?"""
 
-  template = 'What was the reason behind the {amount} CNY I spent on {date}?'
+  template = 'In the Bluecoins app, what was the reason behind the {amount} CNY I spent on {date}?'
   complexity = 2
 
   @property
@@ -281,7 +306,7 @@ class BluecoinsQuerySpendingReason(_BluecoinsQuery):
 class BluecoinsQueryTotalSpendingOnDate(_BluecoinsQuery):
   """Query: How much did I shell out in total on a specific date?"""
 
-  template = 'How much did I shell out in total on {date}?'
+  template = 'In the Bluecoins app, how much did I shell out in total on {date}?'
   complexity = 2
 
   @property
@@ -296,7 +321,7 @@ class BluecoinsQueryTotalSpendingOnDate(_BluecoinsQuery):
 class BluecoinsQueryTransactionCount(_BluecoinsQuery):
   """Query: How many transactions did I make on a specific date?"""
 
-  template = 'How many transactions did I make all together on {date}?'
+  template = 'In the Bluecoins app, how many transactions did I make all together on {date}?'
   complexity = 2
 
   @property
@@ -311,7 +336,7 @@ class BluecoinsQueryTransactionCount(_BluecoinsQuery):
 class BluecoinsQueryCategorySpending(_BluecoinsQuery):
   """Query: What's the total amount I spent on a category this week?"""
 
-  template = "What's the total amount I spent on {category} this week?"
+  template = "In the Bluecoins app, what's the total amount I spent on {category} this week?"
   complexity = 2.5
 
   @property
@@ -373,7 +398,7 @@ class _BluecoinsCreate(_Bluecoins):
 class BluecoinsAddExpense(_BluecoinsCreate):
   """Task: Log an expenditure in the books."""
 
-  template = 'Log an expenditure of {amount} CNY in the books.'
+  template = 'In the Bluecoins app, log an expenditure of {amount} CNY.'
   complexity = 1.5
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -398,7 +423,7 @@ class BluecoinsAddExpense(_BluecoinsCreate):
 class BluecoinsAddIncomeWithLabel(_BluecoinsCreate):
   """Task: Record an income with a specific label."""
 
-  template = "Record an income of {amount} CNY in the books, and mark it as '{label}'."
+  template = "In the Bluecoins app, record an income of {amount} CNY and mark it as '{label}'."
   complexity = 2
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -425,7 +450,7 @@ class BluecoinsAddIncomeWithLabel(_BluecoinsCreate):
 class BluecoinsAddExpenseOnDate(_BluecoinsCreate):
   """Task: Note down an expense for a specific date."""
 
-  template = 'Note down an expense of {amount} CNY for {date}.'
+  template = 'In the Bluecoins app, note down an expense of {amount} CNY for {date}.'
   complexity = 2.5
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -450,7 +475,7 @@ class BluecoinsAddExpenseOnDate(_BluecoinsCreate):
 class BluecoinsAddIncomeOnDateWithNote(_BluecoinsCreate):
   """Task: Record income for a specific date with a note."""
 
-  template = "For {date}, jot down an income of {amount} CNY with '{note}' as the note."
+  template = "In the Bluecoins app, for {date}, jot down an income of {amount} CNY with '{note}' as the note."
   complexity = 3
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -474,7 +499,7 @@ class BluecoinsAddIncomeOnDateWithNote(_BluecoinsCreate):
 class BluecoinsAddExpenseOnDateWithLabel(_BluecoinsCreate):
   """Task: Record expenditure for a specific date with a label."""
 
-  template = "For {date}, record an expenditure of {amount} CNY, marked as '{label}'."
+  template = "In the Bluecoins app, for {date}, record an expenditure of {amount} CNY, marked as '{label}'."
   complexity = 3
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -533,7 +558,7 @@ class _BluecoinsEdit(_Bluecoins):
 class BluecoinsEditExpenseAmount(_BluecoinsEdit):
   """Task: Adjust an expenditure to a new amount."""
 
-  template = 'Adjust the expenditure on {date}, to {new_amount} CNY.'
+  template = 'In the Bluecoins app, adjust the expenditure on {date} to {new_amount} CNY.'
   complexity = 2.5
 
   def _validate_edit(self, after_transactions: list[BluecoinsTransaction]) -> float:
@@ -554,8 +579,8 @@ class BluecoinsEditIncomeDateAndAmount(_BluecoinsEdit):
   """Task: Shift an income entry to a new date and update amount."""
 
   template = (
-      'Shift the income entry from {old_date}, to {new_date}, and update '
-      'the amount to {new_amount} CNY.'
+      'In the Bluecoins app, shift the income entry from {old_date} to {new_date}, '
+      'and update the amount to {new_amount} CNY.'
   )
   complexity = 3.5
 
@@ -576,7 +601,7 @@ class BluecoinsEditTransactionType(_BluecoinsEdit):
   """Task: Switch transaction type and add a note."""
 
   template = (
-      "Switch the {old_date} transaction from '{old_type}' to '{new_type}' "
+      "In the Bluecoins app, switch the {old_date} transaction from '{old_type}' to '{new_type}' "
       "and add '{note}' as the note."
   )
   complexity = 3.5
@@ -608,7 +633,7 @@ class BluecoinsEditTransactionTypeAmountNote(_BluecoinsEdit):
   """Task: Change transaction type, amount, and note."""
 
   template = (
-      "Change the type of the transaction on {date}, from '{old_type}' to "
+      "In the Bluecoins app, change the type of the transaction on {date} from '{old_type}' to "
       "'{new_type}', adjust the amount to {new_amount} CNY, and change the "
       "note to '{new_note}'."
   )
@@ -648,7 +673,7 @@ class BluecoinsEditExpenseDateAmountNote(_BluecoinsEdit):
   """Task: Move expense to new date, adjust amount, and update note."""
 
   template = (
-      'Move the expense entry from {old_date}, to {new_date}, adjust the '
+      'In the Bluecoins app, move the expense entry from {old_date} to {new_date}, adjust the '
       "amount to {new_amount} CNY, and update the note to '{new_note}'."
   )
   complexity = 4

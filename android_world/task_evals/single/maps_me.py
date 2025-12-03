@@ -861,27 +861,12 @@ class MapsMeNavigateToLocation(_MapsMeOperation):
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
-    """Check if navigation was started."""
+    """Check if navigation was started to the correct destination."""
     destination = self.params['destination'].lower()
 
-    # Check if we're in navigation mode or route planning
-    if _check_navigation_active(env):
-      logging.info('Navigation appears to be active.')
-      return 1.0
-
-    # Check if destination appears in UI
-    if _check_ui_for_text(env, destination):
-      logging.info('Destination found in UI: %s', destination)
-      return 1.0
-
-    # Check for route-related UI elements
-    if _check_ui_for_text(env, 'route') or _check_ui_for_text(env, 'start'):
-      logging.info('Route planning UI detected.')
-      return 1.0
-
-    # If agent indicated task completion
-    if env.interaction_cache:
-      logging.info('Agent indicated completion: %s', env.interaction_cache)
+    # Must have destination visible AND navigation active
+    if _check_ui_for_text(env, destination) and _check_navigation_active(env):
+      logging.info('Navigation active with destination: %s', destination)
       return 1.0
 
     return 0.0
@@ -910,11 +895,8 @@ class MapsMeNavigateToStanford(_MapsMeOperation):
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
-    if _check_navigation_active(env):
-      return 1.0
-    if _check_ui_for_text(env, 'stanford'):
-      return 1.0
-    if env.interaction_cache:
+    # Must have "stanford" visible AND navigation active
+    if _check_ui_for_text(env, 'stanford') and _check_navigation_active(env):
       return 1.0
     return 0.0
 
@@ -934,11 +916,8 @@ class MapsMeNavigateToUniversitySouth(_MapsMeOperation):
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
-    if _check_navigation_active(env):
-      return 1.0
-    if _check_ui_for_text(env, 'university south'):
-      return 1.0
-    if env.interaction_cache:
+    # Must have "university south" visible AND navigation active
+    if _check_ui_for_text(env, 'university south') and _check_navigation_active(env):
       return 1.0
     return 0.0
 
@@ -958,11 +937,8 @@ class MapsMeNavigateToOpenAI(_MapsMeOperation):
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
-    if _check_navigation_active(env):
-      return 1.0
-    if _check_ui_for_text(env, 'openai'):
-      return 1.0
-    if env.interaction_cache:
+    # Must have "openai" visible AND navigation active
+    if _check_ui_for_text(env, 'openai') and _check_navigation_active(env):
       return 1.0
     return 0.0
 
@@ -982,11 +958,9 @@ class MapsMeNavigateToBerkeley(_MapsMeOperation):
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
-    if _check_navigation_active(env):
-      return 1.0
-    if _check_ui_for_text(env, 'berkeley') or _check_ui_for_text(env, 'california'):
-      return 1.0
-    if env.interaction_cache:
+    # Must have "berkeley" or "california" visible AND navigation active
+    has_destination = _check_ui_for_text(env, 'berkeley') or _check_ui_for_text(env, 'california')
+    if has_destination and _check_navigation_active(env):
       return 1.0
     return 0.0
 
