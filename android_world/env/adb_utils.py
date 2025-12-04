@@ -49,6 +49,9 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     'gmail|gemail|google mail|google email|google mail client': (
         'com.google.android.gm/.ConversationListActivityGmail'
     ),
+    'maps.me|mapsme': (
+        'com.mapswithme.maps.pro/.DefaultIcon'
+    ),
     'google maps|gmaps|maps|google map': (
         'com.google.android.apps.maps/com.google.android.maps.MapsActivity'
     ),
@@ -158,9 +161,6 @@ _PATTERN_TO_ACTIVITY = immutabledict.immutabledict({
     ),
     'bluecoins': (
         'com.rammigsoftware.bluecoins/.ui.activities.main.MainActivity'
-    ),
-    'maps.me|mapsme': (
-        'com.mapswithme.maps.pro/.DefaultIcon'
     ),
     'pi music player|pi music|pimusic': (
         'com.Project100Pi.themusicplayer/com.project100Pi.themusicplayer.ui.activity.SplashActivity'

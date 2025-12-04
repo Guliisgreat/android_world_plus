@@ -52,7 +52,7 @@ class BluecoinsTransaction(sqlite_schema_utils.SQLiteRow):
     - transactionsTableID: Primary key
     - itemID: Foreign key to ITEMTABLE
     - amount: Transaction amount (INTEGER)
-    - transactionCurrency: Currency code (e.g., "USD", "CNY")
+    - transactionCurrency: Currency code (e.g., "USD")
     - conversionRateNew: Exchange rate
     - date: Date string in format "YYYY-MM-DD HH:MM:SS"
     - transactionTypeID: 3=Expense, 4=Income, 5=Transfer
@@ -149,6 +149,32 @@ _INCOME_CATEGORIES = ['Salary', 'Bonus', 'Gift', 'Investment', 'Other']
 _NOTES = ['taxi', 'eating', 'grocery', 'salary', 'gift', 'shopping', 'Weixin red packet']
 
 
+def _get_fixed_date(day: int) -> str:
+  """Returns a formatted date string for October 2023 (frozen emulator date)."""
+  dt = datetime.datetime(2023, 10, day)
+  return dt.strftime('%B %d, %Y').replace(' 0', ' ')  # Remove leading zero from day
+
+
+# ===========================================================================
+# DATA IN BLUECOINS (October 15, 2023)
+# ===========================================================================
+# 4 expenses on October 15, 2023:
+#   - 512 USD (category: Other, no notes)
+#   - 888 USD (category: Other, no notes)
+#   - 256 USD (category: Other, no notes)
+#   - 768 USD (category: Other, no notes)
+# Total: 2424 USD, Transaction count: 4
+# ===========================================================================
+
+_FIXED_DAY = 15  # October 15, 2023
+
+# Expected data on October 15, 2023
+_EXPECTED_AMOUNTS = ['512', '888', '256', '768']
+_EXPECTED_TOTAL = '2424'  # 512 + 888 + 256 + 768
+_EXPECTED_COUNT = '4'
+_EXPECTED_CATEGORY = 'other'
+
+
 def _generate_transaction(
     is_income: bool = False,
     amount: Optional[int] = None,
@@ -169,12 +195,12 @@ def _generate_transaction(
   if amount is None:
     amount = random.randint(10, 1000)
   if date_str is None:
-    # Random date in May 2024
+    # Random date in October 2023 (frozen emulator date)
     day = random.randint(1, 15)
     hour = random.randint(8, 20)
     minute = random.randint(0, 59)
     second = random.randint(0, 59)
-    date_str = f'2024-05-{day:02d} {hour:02d}:{minute:02d}:{second:02d}'
+    date_str = f'2023-10-{day:02d} {hour:02d}:{minute:02d}:{second:02d}'
   if notes is None:
     notes = random.choice(_NOTES)
 
@@ -271,36 +297,36 @@ class _BluecoinsQuery(_Bluecoins):
 
 
 class BluecoinsQuerySpendingOnDate(_BluecoinsQuery):
-  """Query: How much did I spend on a specific date?"""
+  """Query: How much did I spend in total on a specific date?"""
 
-  template = 'In the Bluecoins app, could you tell me how much I spent on {date}?'
+  template = 'In the Bluecoins app, how much did I spend in total on {date}?'
   complexity = 2
 
   @property
   def expected_answer(self) -> str:
-    return str(self.params['expected_amount'])
+    # Total of all 4 expenses: 512 + 888 + 256 + 768 = 2424
+    return _EXPECTED_TOTAL
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    dates = ['May 10, 2024', 'May 3, 2024', 'May 6, 2024', 'May 2, 2024', 'May 15, 2024']
-    amounts = ['388.88', '512.00', '256.00', '768.00', '100.50']
-    idx = random.randint(0, len(dates) - 1)
-    return {'date': dates[idx], 'expected_amount': amounts[idx]}
+    return {'date': _get_fixed_date(_FIXED_DAY)}
 
 
-class BluecoinsQuerySpendingReason(_BluecoinsQuery):
-  """Query: What was the reason behind a specific spending?"""
+class BluecoinsQuerySpendingCategory(_BluecoinsQuery):
+  """Query: What category is a specific expense under?"""
 
-  template = 'In the Bluecoins app, what was the reason behind the {amount} CNY I spent on {date}?'
+  template = 'In the Bluecoins app, what category is the {amount} USD expense on {date} under?'
   complexity = 2
 
   @property
   def expected_answer(self) -> str:
-    return self.params['expected_reason']
+    # All expenses are under "Other" category
+    return _EXPECTED_CATEGORY
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'amount': '388.88', 'date': 'May 3, 2024', 'expected_reason': 'taxi'}
+    amount = random.choice(_EXPECTED_AMOUNTS)
+    return {'amount': amount, 'date': _get_fixed_date(_FIXED_DAY)}
 
 
 class BluecoinsQueryTotalSpendingOnDate(_BluecoinsQuery):
@@ -315,7 +341,8 @@ class BluecoinsQueryTotalSpendingOnDate(_BluecoinsQuery):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'date': 'May 6, 2024', 'expected_total': '1024.00'}
+    # Total of 512 + 888 + 256 + 768 = 2424 USD on October 15, 2023
+    return {'date': _get_fixed_date(_FIXED_DAY), 'expected_total': _EXPECTED_TOTAL}
 
 
 class BluecoinsQueryTransactionCount(_BluecoinsQuery):
@@ -330,23 +357,24 @@ class BluecoinsQueryTransactionCount(_BluecoinsQuery):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'date': 'May 6, 2024', 'expected_count': '5'}
+    # 4 transactions on October 15, 2023
+    return {'date': _get_fixed_date(_FIXED_DAY), 'expected_count': _EXPECTED_COUNT}
 
 
 class BluecoinsQueryCategorySpending(_BluecoinsQuery):
-  """Query: What's the total amount I spent on a category this week?"""
+  """Query: What's the total amount I spent on a category on a date?"""
 
-  template = "In the Bluecoins app, what's the total amount I spent on {category} this week?"
+  template = "In the Bluecoins app, what's the total amount I spent on '{category}' category on {date}?"
   complexity = 2.5
 
   @property
   def expected_answer(self) -> str:
-    return str(self.params['expected_total'])
+    # All 4 expenses are under "Other" category, total = 2424
+    return _EXPECTED_TOTAL
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    categories = ['taxis', 'food', 'groceries', 'entertainment', 'transport']
-    return {'category': random.choice(categories), 'expected_total': str(random.randint(100, 2000))}
+    return {'category': 'Other', 'date': _get_fixed_date(_FIXED_DAY)}
 
 
 # ============================================================================
@@ -398,7 +426,7 @@ class _BluecoinsCreate(_Bluecoins):
 class BluecoinsAddExpense(_BluecoinsCreate):
   """Task: Log an expenditure in the books."""
 
-  template = 'In the Bluecoins app, log an expenditure of {amount} CNY.'
+  template = 'In the Bluecoins app, log an expenditure of {amount} USD.'
   complexity = 1.5
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -423,7 +451,7 @@ class BluecoinsAddExpense(_BluecoinsCreate):
 class BluecoinsAddIncomeWithLabel(_BluecoinsCreate):
   """Task: Record an income with a specific label."""
 
-  template = "In the Bluecoins app, record an income of {amount} CNY and mark it as '{label}'."
+  template = "In the Bluecoins app, record an income of {amount} USD and mark it as '{label}'."
   complexity = 2
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -450,7 +478,7 @@ class BluecoinsAddIncomeWithLabel(_BluecoinsCreate):
 class BluecoinsAddExpenseOnDate(_BluecoinsCreate):
   """Task: Note down an expense for a specific date."""
 
-  template = 'In the Bluecoins app, note down an expense of {amount} CNY for {date}.'
+  template = 'In the Bluecoins app, note down an expense of {amount} USD for {date}.'
   complexity = 2.5
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -466,16 +494,14 @@ class BluecoinsAddExpenseOnDate(_BluecoinsCreate):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    dates = ['May 11, 2024', 'May 10, 2024', 'May 5, 2024', 'April 20, 2024']
-    amounts = [768, 512, 256, 1024]
-    idx = random.randint(0, len(dates) - 1)
-    return {'amount': amounts[idx], 'date': dates[idx]}
+    amount = random.choice([768, 512, 256, 1024])
+    return {'amount': amount, 'date': _get_fixed_date(_FIXED_DAY)}
 
 
 class BluecoinsAddIncomeOnDateWithNote(_BluecoinsCreate):
   """Task: Record income for a specific date with a note."""
 
-  template = "In the Bluecoins app, for {date}, jot down an income of {amount} CNY with '{note}' as the note."
+  template = "In the Bluecoins app, for {date}, jot down an income of {amount} USD with '{note}' as the note."
   complexity = 3
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -493,13 +519,13 @@ class BluecoinsAddIncomeOnDateWithNote(_BluecoinsCreate):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'date': 'March 8, 2024', 'amount': 3, 'note': 'Weixin red packet'}
+    return {'date': _get_fixed_date(_FIXED_DAY), 'amount': 100, 'note': 'gift'}
 
 
 class BluecoinsAddExpenseOnDateWithLabel(_BluecoinsCreate):
   """Task: Record expenditure for a specific date with a label."""
 
-  template = "In the Bluecoins app, for {date}, record an expenditure of {amount} CNY, marked as '{label}'."
+  template = "In the Bluecoins app, for {date}, record an expenditure of {amount} USD, marked as '{label}'."
   complexity = 3
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
@@ -517,7 +543,7 @@ class BluecoinsAddExpenseOnDateWithLabel(_BluecoinsCreate):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'date': 'May 14, 2024', 'amount': 256, 'label': 'eating'}
+    return {'date': _get_fixed_date(_FIXED_DAY), 'amount': 256, 'label': 'eating'}
 
 
 # ============================================================================
@@ -558,7 +584,7 @@ class _BluecoinsEdit(_Bluecoins):
 class BluecoinsEditExpenseAmount(_BluecoinsEdit):
   """Task: Adjust an expenditure to a new amount."""
 
-  template = 'In the Bluecoins app, adjust the expenditure on {date} to {new_amount} CNY.'
+  template = 'In the Bluecoins app, adjust the expenditure on {date} to {new_amount} USD.'
   complexity = 2.5
 
   def _validate_edit(self, after_transactions: list[BluecoinsTransaction]) -> float:
@@ -572,7 +598,7 @@ class BluecoinsEditExpenseAmount(_BluecoinsEdit):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'date': 'May 15, 2024', 'new_amount': 500}
+    return {'date': _get_fixed_date(_FIXED_DAY), 'new_amount': 500}
 
 
 class BluecoinsEditIncomeDateAndAmount(_BluecoinsEdit):
@@ -580,7 +606,7 @@ class BluecoinsEditIncomeDateAndAmount(_BluecoinsEdit):
 
   template = (
       'In the Bluecoins app, shift the income entry from {old_date} to {new_date}, '
-      'and update the amount to {new_amount} CNY.'
+      'and update the amount to {new_amount} USD.'
   )
   complexity = 3.5
 
@@ -594,7 +620,11 @@ class BluecoinsEditIncomeDateAndAmount(_BluecoinsEdit):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'old_date': 'May 12th, 2024', 'new_date': 'May 10th, 2024', 'new_amount': '18250'}
+    return {
+        'old_date': _get_fixed_date(14),
+        'new_date': _get_fixed_date(_FIXED_DAY),
+        'new_amount': '18250'
+    }
 
 
 class BluecoinsEditTransactionType(_BluecoinsEdit):
@@ -626,7 +656,7 @@ class BluecoinsEditTransactionType(_BluecoinsEdit):
 
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
-    return {'old_date': 'May 13, 2024', 'old_type': 'expense', 'new_type': 'income', 'note': 'Gift'}
+    return {'old_date': _get_fixed_date(_FIXED_DAY), 'old_type': 'expense', 'new_type': 'income', 'note': 'Gift'}
 
 
 class BluecoinsEditTransactionTypeAmountNote(_BluecoinsEdit):
@@ -634,7 +664,7 @@ class BluecoinsEditTransactionTypeAmountNote(_BluecoinsEdit):
 
   template = (
       "In the Bluecoins app, change the type of the transaction on {date} from '{old_type}' to "
-      "'{new_type}', adjust the amount to {new_amount} CNY, and change the "
+      "'{new_type}', adjust the amount to {new_amount} USD, and change the "
       "note to '{new_note}'."
   )
   complexity = 4
@@ -661,7 +691,7 @@ class BluecoinsEditTransactionTypeAmountNote(_BluecoinsEdit):
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
     return {
-        'date': 'May 2, 2024',
+        'date': _get_fixed_date(_FIXED_DAY),
         'old_type': 'income',
         'new_type': 'expense',
         'new_amount': 520,
@@ -674,7 +704,7 @@ class BluecoinsEditExpenseDateAmountNote(_BluecoinsEdit):
 
   template = (
       'In the Bluecoins app, move the expense entry from {old_date} to {new_date}, adjust the '
-      "amount to {new_amount} CNY, and update the note to '{new_note}'."
+      "amount to {new_amount} USD, and update the note to '{new_note}'."
   )
   complexity = 4
 
@@ -691,8 +721,8 @@ class BluecoinsEditExpenseDateAmountNote(_BluecoinsEdit):
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
     return {
-        'old_date': 'May 12, 2024',
-        'new_date': 'May 13, 2024',
+        'old_date': _get_fixed_date(_FIXED_DAY),
+        'new_date': _get_fixed_date(16),  # Next day
         'new_amount': 936,
         'new_note': 'Grocery Shopping',
     }

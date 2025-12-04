@@ -119,7 +119,7 @@ class TaskRegistry:
       audio_recorder.AudioRecorderRecordAudioWithFileName,
       # Bluecoins personal finance tasks.
       bluecoins.BluecoinsQuerySpendingOnDate,
-      bluecoins.BluecoinsQuerySpendingReason,
+      bluecoins.BluecoinsQuerySpendingCategory,
       bluecoins.BluecoinsQueryTotalSpendingOnDate,
       bluecoins.BluecoinsQueryTransactionCount,
       bluecoins.BluecoinsQueryCategorySpending,

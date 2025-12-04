@@ -241,11 +241,11 @@ class BluecoinsQuerySpendingOnDateTest(absltest.TestCase):
     self.assertEqual(task.expected_answer, '388.88')
 
 
-class BluecoinsQuerySpendingReasonTest(absltest.TestCase):
-  """Tests for BluecoinsQuerySpendingReason task."""
+class BluecoinsQuerySpendingCategoryTest(absltest.TestCase):
+  """Tests for BluecoinsQuerySpendingCategory task."""
 
   def test_generate_random_params(self):
-    params = bluecoins.BluecoinsQuerySpendingReason.generate_random_params()
+    params = bluecoins.BluecoinsQuerySpendingCategory.generate_random_params()
     self.assertIn('amount', params)
     self.assertIn('date', params)
     self.assertIn('expected_reason', params)
@@ -256,7 +256,7 @@ class BluecoinsQuerySpendingReasonTest(absltest.TestCase):
         'date': 'May 3, 2024',
         'expected_reason': 'taxi',
     }
-    task = bluecoins.BluecoinsQuerySpendingReason(params)
+    task = bluecoins.BluecoinsQuerySpendingCategory(params)
     self.assertEqual(
         task.goal,
         'What was the reason behind the 388.88 CNY I spent on May 3, 2024?',

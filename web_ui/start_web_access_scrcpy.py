@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class ScrcpyWebAccess:
-    def __init__(self, web_port: int = 6080, vnc_port: int = 5901, device_serial: str = None):
+    def __init__(self, web_port: int = 6080, vnc_port: int = 5901, device_serial: str = None, display_num: int = None):
         self.web_port = web_port
         self.vnc_port = vnc_port
         self.device_serial = device_serial
@@ -47,7 +47,7 @@ class ScrcpyWebAccess:
         self.x11vnc_process = None
         self.websockify_process = None
         self.running = True
-        self.display_num = 10  # Virtual display number
+        self.display_num = display_num if display_num is not None else 10  # Virtual display number
     
     def _get_scrcpy_version(self) -> str:
         """Get scrcpy version string."""
@@ -180,26 +180,31 @@ class ScrcpyWebAccess:
     def start_xvfb(self) -> bool:
         """Start Xvfb (virtual X server)."""
         try:
-            # Try to find an available display number
-            # Check if ports are in use (simple check)
-            available_display = None
-            for i in range(10, 100):
-                try:
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock.settimeout(0.1)
-                    result = sock.connect_ex(('localhost', 6000 + i))
-                    sock.close()
-                    if result != 0:  # Port not in use
-                        available_display = i
-                        break
-                except:
-                    continue
+            # Use user-specified display or auto-detect
+            if self.display_num is None or self.display_num == 10:
+                # Try to find an available display number
+                # Check if ports are in use (simple check)
+                available_display = None
+                for i in range(10, 100):
+                    try:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(0.1)
+                        result = sock.connect_ex(('localhost', 6000 + i))
+                        sock.close()
+                        if result != 0:  # Port not in use
+                            # Also check if X lock file exists
+                            if not os.path.exists(f'/tmp/.X{i}-lock'):
+                                available_display = i
+                                break
+                    except:
+                        continue
+                
+                if available_display is None:
+                    available_display = 99  # Fallback
+                
+                self.display_num = available_display
             
-            if available_display is None:
-                available_display = 99  # Fallback
-            
-            self.display_num = available_display
-            display = f":{available_display}"
+            display = f":{self.display_num}"
             logger.info(f"Starting Xvfb on display {display}")
             
             # Start Xvfb
@@ -714,6 +719,12 @@ def main():
         action="store_true",
         help="List all connected devices and exit"
     )
+    parser.add_argument(
+        "--display",
+        type=int,
+        default=None,
+        help="X display number to use (default: auto-detect from 10-30)"
+    )
     
     args = parser.parse_args()
     
@@ -733,7 +744,8 @@ def main():
     access = ScrcpyWebAccess(
         web_port=args.web_port,
         vnc_port=args.vnc_port,
-        device_serial=args.device_serial
+        device_serial=args.device_serial,
+        display_num=args.display
     )
     
     access.run()
