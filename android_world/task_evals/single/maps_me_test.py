@@ -256,7 +256,7 @@ class MapsMeCheckWalkingDistanceTimeTest(absltest.TestCase):
     task = maps_me.MapsMeCheckWalkingDistanceTime(params)
     self.assertEqual(
         task.goal,
-        'Check the walking distance and time between Bus Stop of Stanford '
+        'In Maps.me, check the walking distance and time between Bus Stop of Stanford '
         'Campus Oval and Bus Stop of Oxford Street & University Avenue',
     )
 
@@ -278,7 +278,7 @@ class MapsMeCheckDrivingDistanceTimeTest(absltest.TestCase):
     task = maps_me.MapsMeCheckDrivingDistanceTime(params)
     self.assertEqual(
         task.goal,
-        'Check the driving distance and time between Bus stop of 2700 Coast '
+        'In Maps.me, check the driving distance and time between Bus stop of 2700 Coast '
         'Avenue and Bus Stop Route 51',
     )
 
@@ -300,7 +300,7 @@ class MapsMeCheckRidingTimeTest(absltest.TestCase):
     task = maps_me.MapsMeCheckRidingTime(params)
     self.assertEqual(
         task.goal,
-        'Check the riding time between Bus Stop of Stanford Campus Oval and '
+        'In Maps.me, check the riding time between Bus Stop of Stanford Campus Oval and '
         'Bus Stop of Oxford Street & University Avenue',
     )
 
@@ -322,7 +322,7 @@ class MapsMeCheckPublicTransportRouteTest(absltest.TestCase):
     task = maps_me.MapsMeCheckPublicTransportRoute(params)
     self.assertEqual(
         task.goal,
-        'Check the route by public transportation between Bus stop of 2700 '
+        'In Maps.me, check the route by public transportation between Bus stop of 2700 '
         'Coast Avenue and Bus Stop Route 51',
     )
 
@@ -342,7 +342,7 @@ class MapsMeCompareRidingVsPublicTransportTest(absltest.TestCase):
         'expected_answer': '',
     }
     task = maps_me.MapsMeCompareRidingVsPublicTransport(params)
-    self.assertIn('Compare which takes less time', task.goal)
+    self.assertIn('In Maps.me, compare which takes less time', task.goal)
     self.assertIn('by riding or by public transportation', task.goal)
 
 
@@ -358,7 +358,7 @@ class MapsMeCheckNearestPlaceTest(absltest.TestCase):
     task = maps_me.MapsMeCheckNearestPlace(params)
     self.assertEqual(
         task.goal,
-        'Check the nearest restaurant and tell me what is it',
+        'In Maps.me, check the nearest restaurant and tell me what is it',
     )
 
 
@@ -372,6 +372,7 @@ class MapsMeCheckNearestPlaceWalkTimeTest(absltest.TestCase):
   def test_goal_format(self):
     params = {'place_type': 'restaurant', 'expected_answer': ''}
     task = maps_me.MapsMeCheckNearestPlaceWalkTime(params)
+    self.assertIn('In Maps.me', task.goal)
     self.assertIn('nearest restaurant', task.goal)
     self.assertIn('time it will take to walk', task.goal)
 
@@ -388,7 +389,7 @@ class MapsMeCheckNearestHotelTest(absltest.TestCase):
     task = maps_me.MapsMeCheckNearestHotel(params)
     self.assertEqual(
         task.goal,
-        'Check the nearest hotel, tell me what is it',
+        'In Maps.me, check the nearest hotel, tell me what is it',
     )
 
 
@@ -402,6 +403,7 @@ class MapsMeCheckNearestPlaceDriveTimeTest(absltest.TestCase):
   def test_goal_format(self):
     params = {'place_name': 'IKEA', 'expected_answer': ''}
     task = maps_me.MapsMeCheckNearestPlaceDriveTime(params)
+    self.assertIn('In Maps.me', task.goal)
     self.assertIn('nearest IKEA', task.goal)
     self.assertIn('how long it will take to drive', task.goal)
 
@@ -418,7 +420,7 @@ class MapsMeAddWorkPlaceTest(absltest.TestCase):
     task = maps_me.MapsMeAddWorkPlace(params)
     self.assertEqual(
         task.goal,
-        'Add the address of OpenAI to my Work place',
+        'In Maps.me, add the address of OpenAI to my Work place',
     )
 
   def test_complexity(self):
@@ -439,7 +441,7 @@ class MapsMeNavigateToLocationTest(absltest.TestCase):
     task = maps_me.MapsMeNavigateToLocation(params)
     self.assertEqual(
         task.goal,
-        'Navigate from my location to Stanford University',
+        'In Maps.me, navigate from my location to Stanford University',
     )
 
 
@@ -455,7 +457,7 @@ class MapsMeNavigateToStanfordTest(absltest.TestCase):
     task = maps_me.MapsMeNavigateToStanford(params)
     self.assertEqual(
         task.goal,
-        'Navigate from my location to Stanford University',
+        'In Maps.me, navigate from my location to Stanford University',
     )
 
 
@@ -471,7 +473,7 @@ class MapsMeNavigateToUniversitySouthTest(absltest.TestCase):
     task = maps_me.MapsMeNavigateToUniversitySouth(params)
     self.assertEqual(
         task.goal,
-        'Navigate from my location to University South',
+        'In Maps.me, navigate from my location to University South',
     )
 
 
@@ -487,7 +489,7 @@ class MapsMeNavigateToOpenAITest(absltest.TestCase):
     task = maps_me.MapsMeNavigateToOpenAI(params)
     self.assertEqual(
         task.goal,
-        'Navigate from my location to OpenAI',
+        'In Maps.me, navigate from my location to OpenAI',
     )
 
 
@@ -503,7 +505,7 @@ class MapsMeNavigateToBerkeleyTest(absltest.TestCase):
     task = maps_me.MapsMeNavigateToBerkeley(params)
     self.assertEqual(
         task.goal,
-        'Navigate from my location to University of California, Berkeley',
+        'In Maps.me, navigate from my location to University of California, Berkeley',
     )
 
 

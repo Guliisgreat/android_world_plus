@@ -338,7 +338,7 @@ class PiMusicQueryTotalSongsTest(absltest.TestCase):
 
     def test_template(self):
         task = pimusic.PiMusicQueryTotalSongs(params={'total_songs': 10})
-        self.assertEqual(task.template, 'Tell me how many songs do I have in total?')
+        self.assertEqual(task.template, 'In Pi Music Player, tell me how many songs do I have in total?')
 
 
 class PiMusicQueryArtistSongCountTest(absltest.TestCase):
@@ -413,7 +413,7 @@ class PiMusicPlayFromPlaylistTest(absltest.TestCase):
         task = pimusic.PiMusicPlayFromPlaylist(
             params={'playlist_name': 'Favorite', 'position': 1}
         )
-        self.assertEqual(task.goal, "Play the first song in 'Favorite' playlist.")
+        self.assertEqual(task.goal, "In Pi Music Player, play the first song in 'Favorite' playlist.")
 
 
 class PiMusicSortByDurationDescendingTest(absltest.TestCase):
@@ -451,7 +451,7 @@ class PiMusicPauseAndSeekTest(absltest.TestCase):
         )
         self.assertEqual(
             task.goal,
-            'Pause the currently playing song and seek to 1 minute and 27 seconds.',
+            'In Pi Music Player, pause the currently playing song and seek to 1 minute and 27 seconds.',
         )
 
 

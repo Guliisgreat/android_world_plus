@@ -226,19 +226,19 @@ class BluecoinsQuerySpendingOnDateTest(absltest.TestCase):
   def test_generate_random_params(self):
     params = bluecoins.BluecoinsQuerySpendingOnDate.generate_random_params()
     self.assertIn('date', params)
-    self.assertIn('expected_amount', params)
 
   def test_goal_format(self):
-    params = {'date': 'May 10, 2024', 'expected_amount': '388.88'}
+    params = {'date': 'October 15, 2023'}
     task = bluecoins.BluecoinsQuerySpendingOnDate(params)
     self.assertEqual(
-        task.goal, 'Could you tell me how much I spent on May 10, 2024?'
+        task.goal, 'In the Bluecoins app, how much did I spend in total on October 15, 2023?'
     )
 
   def test_expected_answer(self):
-    params = {'date': 'May 10, 2024', 'expected_amount': '388.88'}
+    params = {'date': 'October 15, 2023'}
     task = bluecoins.BluecoinsQuerySpendingOnDate(params)
-    self.assertEqual(task.expected_answer, '388.88')
+    # Expected total is 2424 (512 + 888 + 256 + 768)
+    self.assertEqual(task.expected_answer, '2424')
 
 
 class BluecoinsQuerySpendingCategoryTest(absltest.TestCase):
@@ -248,18 +248,16 @@ class BluecoinsQuerySpendingCategoryTest(absltest.TestCase):
     params = bluecoins.BluecoinsQuerySpendingCategory.generate_random_params()
     self.assertIn('amount', params)
     self.assertIn('date', params)
-    self.assertIn('expected_reason', params)
 
   def test_goal_format(self):
     params = {
-        'amount': '388.88',
-        'date': 'May 3, 2024',
-        'expected_reason': 'taxi',
+        'amount': '512',
+        'date': 'October 15, 2023',
     }
     task = bluecoins.BluecoinsQuerySpendingCategory(params)
     self.assertEqual(
         task.goal,
-        'What was the reason behind the 388.88 CNY I spent on May 3, 2024?',
+        'In the Bluecoins app, what category is the 512 USD expense on October 15, 2023 under?',
     )
 
 
@@ -272,11 +270,11 @@ class BluecoinsQueryTransactionCountTest(absltest.TestCase):
     self.assertIn('expected_count', params)
 
   def test_goal_format(self):
-    params = {'date': 'May 6, 2024', 'expected_count': '5'}
+    params = {'date': 'October 15, 2023', 'expected_count': '4'}
     task = bluecoins.BluecoinsQueryTransactionCount(params)
     self.assertEqual(
         task.goal,
-        'How many transactions did I make all together on May 6, 2024?',
+        'In the Bluecoins app, how many transactions did I make all together on October 15, 2023?',
     )
 
 
@@ -286,13 +284,13 @@ class BluecoinsQueryCategorySpendingTest(absltest.TestCase):
   def test_generate_random_params(self):
     params = bluecoins.BluecoinsQueryCategorySpending.generate_random_params()
     self.assertIn('category', params)
-    self.assertIn('expected_total', params)
+    self.assertIn('date', params)
 
   def test_goal_format(self):
-    params = {'category': 'taxis', 'expected_total': '500'}
+    params = {'category': 'Other', 'date': 'October 15, 2023'}
     task = bluecoins.BluecoinsQueryCategorySpending(params)
     self.assertEqual(
-        task.goal, "What's the total amount I spent on taxis this week?"
+        task.goal, "In the Bluecoins app, what's the total amount I spent on 'Other' category on October 15, 2023?"
     )
 
 
@@ -307,7 +305,7 @@ class BluecoinsAddExpenseTest(absltest.TestCase):
   def test_goal_format(self):
     params = {'amount': 512}
     task = bluecoins.BluecoinsAddExpense(params)
-    self.assertEqual(task.goal, 'Log an expenditure of 512 CNY in the books.')
+    self.assertEqual(task.goal, 'In the Bluecoins app, log an expenditure of 512 USD.')
 
   def test_complexity(self):
     params = {'amount': 512}
@@ -328,7 +326,7 @@ class BluecoinsAddIncomeWithLabelTest(absltest.TestCase):
     task = bluecoins.BluecoinsAddIncomeWithLabel(params)
     self.assertEqual(
         task.goal,
-        "Record an income of 8000 CNY in the books, and mark it as 'salary'.",
+        "In the Bluecoins app, record an income of 8000 USD and mark it as 'salary'.",
     )
 
 
@@ -341,10 +339,10 @@ class BluecoinsAddExpenseOnDateTest(absltest.TestCase):
     self.assertIn('date', params)
 
   def test_goal_format(self):
-    params = {'amount': 768, 'date': 'May 11, 2024'}
+    params = {'amount': 768, 'date': 'October 15, 2023'}
     task = bluecoins.BluecoinsAddExpenseOnDate(params)
     self.assertEqual(
-        task.goal, 'Note down an expense of 768 CNY for May 11, 2024.'
+        task.goal, 'In the Bluecoins app, note down an expense of 768 USD for October 15, 2023.'
     )
 
 
@@ -358,11 +356,11 @@ class BluecoinsAddIncomeOnDateWithNoteTest(absltest.TestCase):
     self.assertIn('note', params)
 
   def test_goal_format(self):
-    params = {'date': 'March 8, 2024', 'amount': 3, 'note': 'Weixin red packet'}
+    params = {'date': 'October 15, 2023', 'amount': 100, 'note': 'gift'}
     task = bluecoins.BluecoinsAddIncomeOnDateWithNote(params)
     self.assertEqual(
         task.goal,
-        "For March 8, 2024, jot down an income of 3 CNY with 'Weixin red packet' as the note.",
+        "In the Bluecoins app, for October 15, 2023, jot down an income of 100 USD with 'gift' as the note.",
     )
 
 
@@ -376,11 +374,11 @@ class BluecoinsAddExpenseOnDateWithLabelTest(absltest.TestCase):
     self.assertIn('label', params)
 
   def test_goal_format(self):
-    params = {'date': 'May 14, 2024', 'amount': 256, 'label': 'eating'}
+    params = {'date': 'October 15, 2023', 'amount': 256, 'label': 'eating'}
     task = bluecoins.BluecoinsAddExpenseOnDateWithLabel(params)
     self.assertEqual(
         task.goal,
-        "For May 14, 2024, record an expenditure of 256 CNY, marked as 'eating'.",
+        "In the Bluecoins app, for October 15, 2023, record an expenditure of 256 USD, marked as 'eating'.",
     )
 
 
@@ -393,11 +391,11 @@ class BluecoinsEditExpenseAmountTest(absltest.TestCase):
     self.assertIn('new_amount', params)
 
   def test_goal_format(self):
-    params = {'date': 'May 15, 2024', 'new_amount': 500}
+    params = {'date': 'October 15, 2023', 'new_amount': 500}
     task = bluecoins.BluecoinsEditExpenseAmount(params)
     self.assertEqual(
         task.goal,
-        'Adjust the expenditure on May 15, 2024, to 500 CNY.',
+        'In the Bluecoins app, adjust the expenditure on October 15, 2023 to 500 USD.',
     )
 
 
@@ -412,15 +410,15 @@ class BluecoinsEditIncomeDateAndAmountTest(absltest.TestCase):
 
   def test_goal_format(self):
     params = {
-        'old_date': 'May 12th, 2024',
-        'new_date': 'May 10th, 2024',
+        'old_date': 'October 14, 2023',
+        'new_date': 'October 15, 2023',
         'new_amount': '18250',
     }
     task = bluecoins.BluecoinsEditIncomeDateAndAmount(params)
     self.assertEqual(
         task.goal,
-        'Shift the income entry from May 12th, 2024, to May 10th, 2024, and '
-        'update the amount to 18250 CNY.',
+        'In the Bluecoins app, shift the income entry from October 14, 2023 to October 15, 2023, '
+        'and update the amount to 18250 USD.',
     )
 
 
@@ -436,7 +434,7 @@ class BluecoinsEditTransactionTypeTest(absltest.TestCase):
 
   def test_goal_format(self):
     params = {
-        'old_date': 'May 13, 2024',
+        'old_date': 'October 15, 2023',
         'old_type': 'expense',
         'new_type': 'income',
         'note': 'Gift',
@@ -444,8 +442,8 @@ class BluecoinsEditTransactionTypeTest(absltest.TestCase):
     task = bluecoins.BluecoinsEditTransactionType(params)
     self.assertEqual(
         task.goal,
-        "Switch the May 13, 2024 transaction from 'expense' to 'income' and "
-        "add 'Gift' as the note.",
+        "In the Bluecoins app, switch the October 15, 2023 transaction from 'expense' to 'income' "
+        "and add 'Gift' as the note.",
     )
 
 
@@ -462,7 +460,7 @@ class BluecoinsEditTransactionTypeAmountNoteTest(absltest.TestCase):
 
   def test_goal_format(self):
     params = {
-        'date': 'May 2, 2024',
+        'date': 'October 15, 2023',
         'old_type': 'income',
         'new_type': 'expense',
         'new_amount': 520,
@@ -471,9 +469,9 @@ class BluecoinsEditTransactionTypeAmountNoteTest(absltest.TestCase):
     task = bluecoins.BluecoinsEditTransactionTypeAmountNote(params)
     self.assertEqual(
         task.goal,
-        "Change the type of the transaction on May 2, 2024, from 'income' to "
-        "'expense', adjust the amount to 520 CNY, and change the note to "
-        "'Wrong Operation'.",
+        "In the Bluecoins app, change the type of the transaction on October 15, 2023 from 'income' to "
+        "'expense', adjust the amount to 520 USD, and change the "
+        "note to 'Wrong Operation'.",
     )
 
 
@@ -489,16 +487,16 @@ class BluecoinsEditExpenseDateAmountNoteTest(absltest.TestCase):
 
   def test_goal_format(self):
     params = {
-        'old_date': 'May 12, 2024',
-        'new_date': 'May 13, 2024',
+        'old_date': 'October 15, 2023',
+        'new_date': 'October 16, 2023',
         'new_amount': 936,
         'new_note': 'Grocery Shopping',
     }
     task = bluecoins.BluecoinsEditExpenseDateAmountNote(params)
     self.assertEqual(
         task.goal,
-        'Move the expense entry from May 12, 2024, to May 13, 2024, adjust the '
-        "amount to 936 CNY, and update the note to 'Grocery Shopping'.",
+        'In the Bluecoins app, move the expense entry from October 15, 2023 to October 16, 2023, adjust the '
+        "amount to 936 USD, and update the note to 'Grocery Shopping'.",
     )
 
 

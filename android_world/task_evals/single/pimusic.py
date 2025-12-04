@@ -382,30 +382,22 @@ def _clear_music_data(env: interface.AsyncEnv) -> None:
 # Base Classes
 # =============================================================================
 class _PiMusicBase(task_eval.TaskEval):
-    """Base class for Pi Music Player tasks."""
+    """Base class for Pi Music Player tasks.
+    
+    Music files are pre-loaded in the AVD snapshot, so we just need to
+    restore the app snapshot (handled by super().initialize_task()).
+    """
 
     app_names = (_APP_NAME,)
     complexity = 1
 
     def initialize_task(self, env: interface.AsyncEnv) -> None:
+        # Load app snapshot and return to home screen (same as Bluecoins/Maps.me)
         super().initialize_task(env)
-        # Clear existing music data
-        _clear_music_data(env)
-        # Clear playlist database
-        _clear_playlist_db(env)
-        # Inject default songs
-        _inject_default_songs(env)
-        # Scan music directory so app sees the files
-        _scan_music_directory(env)
-        # Close and reopen app to refresh
-        adb_utils.close_app(_PACKAGE_NAME, env.controller)
-        adb_utils.launch_app(_PACKAGE_NAME, env.controller)
 
     def tear_down(self, env: interface.AsyncEnv) -> None:
         super().tear_down(env)
         adb_utils.close_app(_PACKAGE_NAME, env.controller)
-        # Clean up injected files
-        _clear_music_data(env)
 
 
 class _PiMusicQuery(_PiMusicBase, metaclass=abc.ABCMeta):
@@ -706,7 +698,7 @@ class PiMusicPlayFromPlaylist(_PiMusicOperation):
 
     @property
     def goal(self) -> str:
-        return f"Play the first song in '{self.params['playlist_name']}' playlist."
+        return f"In Pi Music Player, play the first song in '{self.params['playlist_name']}' playlist."
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         """UI-based validation: check for playback indicators."""
@@ -825,7 +817,7 @@ class PiMusicPauseAndSeek(_PiMusicOperation):
 
     @property
     def goal(self) -> str:
-        return f'Pause the currently playing song and seek to {self.params["seek_minutes"]} minute and {self.params["seek_seconds"]} seconds.'
+        return f'In Pi Music Player, pause the currently playing song and seek to {self.params["seek_minutes"]} minute and {self.params["seek_seconds"]} seconds.'
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         """UI-based validation: check for paused state and seek position."""
