@@ -15,27 +15,27 @@ The Wikipedia app tasks test navigation and customization features of the Wikipe
 #### WikipediaOpen
 - **Complexity**: 1.0
 - **Description**: Open the Wikipedia app
-- **Goal**: "Open Wikipedia."
+- **Goal**: "Open the Wikipedia app."
 - **Success Criteria**: Wikipedia app is open (detected by package name)
 
 #### WikipediaGoToSearchTab
 - **Complexity**: 1.5
-- **Description**: Navigate to the search tab in Wikipedia
-- **Goal**: "Go to search tab in Wikipedia."
+- **Description**: Navigate to the search tab in the Wikipedia app
+- **Goal**: "Go to search tab in the Wikipedia app."
 - **Success Criteria**: Search tab is selected (`org.wikipedia:id/nav_tab_search`)
 
 #### WikipediaGoToSavedTab
 - **Complexity**: 1.5
-- **Description**: Navigate to the saved/reading lists tab in Wikipedia
-- **Goal**: "Go to saved tab in Wikipedia."
+- **Description**: Navigate to the saved/reading lists tab in the Wikipedia app
+- **Goal**: "Go to saved tab in the Wikipedia app."
 - **Success Criteria**: Saved tab is selected (`org.wikipedia:id/nav_tab_reading_lists`)
 
 ### Text Size Customization
 
 #### WikipediaIncreaseTextSize180
 - **Complexity**: 3.0
-- **Description**: Increase text size to 180% in Wikipedia
-- **Goal**: "Increase the text size to 180% in Wikipedia."
+- **Description**: Increase text size to 180% in the Wikipedia app
+- **Goal**: "Increase the text size to 180% in the Wikipedia app."
 - **Success Criteria**: Text size multiplier is set to "8" in preferences (180% = value 8)
 - **Note**: Text size multiplier only appears in XML after being explicitly set
 

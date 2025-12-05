@@ -18,6 +18,7 @@ import abc
 import dataclasses
 import datetime
 import random
+import re
 from typing import Any, Optional
 
 from absl import logging
@@ -284,8 +285,58 @@ class _BluecoinsQuery(_Bluecoins):
 
     # For numeric answers, check if the number is in the response
     if expected.replace('.', '').replace(',', '').isdigit():
-      if expected in agent_answer or expected.replace(',', '') in agent_answer:
-        return 1.0
+      # Normalize expected: remove commas
+      expected_normalized = expected.replace(',', '')
+      expected_int = int(expected_normalized)
+      
+      # Extract money-like numbers from agent answer
+      # Priority 1: Numbers with currency symbols ($2,424.00, $2424)
+      money_patterns = [
+          r'\$[\d,]+(?:\.\d{2})?',  # $2,424.00 or $2424
+          r'[\d,]+(?:\.\d{2})?\s*(?:usd|dollars?)',  # 2,424.00 USD or 2424 dollars
+          r'[\d,]+\.\d{2}',  # 2,424.00 (decimal with 2 digits = likely money)
+      ]
+      
+      money_numbers = []
+      for pattern in money_patterns:
+        matches = re.findall(pattern, agent_answer, re.IGNORECASE)
+        money_numbers.extend(matches)
+      
+      # If no money patterns found, look for larger numbers (4+ digits) 
+      # that are likely amounts, not dates
+      if not money_numbers:
+        # Match numbers with commas (like 2,424) or 4+ digit numbers
+        all_numbers = re.findall(r'[\d,]+', agent_answer)
+        for num in all_numbers:
+          clean_num = num.replace(',', '')
+          # Skip year-like numbers (1900-2100) and small numbers (likely dates)
+          if clean_num.isdigit():
+            num_val = int(clean_num)
+            if num_val >= 100 and not (1900 <= num_val <= 2100):
+              money_numbers.append(num)
+      
+      # Check each extracted money number
+      for num_str in money_numbers:
+        # Normalize: remove $, commas, currency words, trailing decimals
+        normalized = re.sub(r'[$a-zA-Z\s]', '', num_str)
+        normalized = normalized.replace(',', '')
+        # Remove trailing .00 or .0
+        if '.' in normalized:
+          normalized = normalized.rstrip('0').rstrip('.')
+        if normalized == expected_normalized:
+          return 1.0
+      
+      # For small numbers (counts like 4, 10), use word boundary matching
+      # to avoid matching "4" in "14" or "2024"
+      if expected_int < 100:
+        # Match the number as a standalone word (with word boundaries)
+        pattern = r'\b' + expected_normalized + r'\b'
+        if re.search(pattern, agent_answer):
+          return 1.0
+      else:
+        # For larger numbers, check simple containment as fallback
+        if expected_normalized in agent_answer.replace(',', ''):
+          return 1.0
     # For text answers, use fuzzy matching
     elif fuzzy_match_lib.fuzzy_match(expected, agent_answer):
       return 1.0

@@ -21,9 +21,20 @@ python scripts/test_androidlab_apps.py --app bluecoins --task BluecoinsQuerySpen
 python scripts/test_androidlab_apps.py --app maps.me --task MapsMeNavigateToStanford
 python scripts/test_androidlab_apps.py --app pimusic --task PiMusicQueryTotalSongs
 
+# Run ALL tasks for an app
+python scripts/test_androidlab_apps.py --app bluecoins --run_all
+python scripts/test_androidlab_apps.py --app maps.me --run_all
+python scripts/test_androidlab_apps.py --app pimusic --run_all
+python scripts/test_androidlab_apps.py --app all --run_all  # Run all 42 tasks
+
 # Test with custom emulator ports
 python scripts/test_androidlab_apps.py --app bluecoins --task BluecoinsAddExpense --console_port 5706 --grpc_port 8556
 ```
+
+The `--run_all` flag runs all tasks sequentially and provides a summary at the end with:
+- Success/failure counts and success rate
+- Per-task results with scores and step counts
+- Error messages for any failed tasks
 
 ### Requirements
 

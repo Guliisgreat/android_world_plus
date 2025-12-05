@@ -106,7 +106,7 @@ class CalculatorOpen(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Open Calculator."
+  template = "Open the Calculator app."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -128,7 +128,7 @@ class CalculatorInput1(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input 1 in Calculator."
+  template = "In the Calculator app, input 1."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -151,7 +151,7 @@ class CalculatorInput1Plus1(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input '1+1' in Calculator."
+  template = "In the Calculator app, input '1+1'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -174,7 +174,7 @@ class CalculatorInput3Times5(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input '3×5' in Calculator."
+  template = "In the Calculator app, input '3×5'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -197,7 +197,7 @@ class CalculatorInput2Plus24Div3(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input '2+24÷3' in Calculator."
+  template = "In the Calculator app, input '2+24÷3'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -220,7 +220,7 @@ class CalculatorInput17Times23(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input '17×23' in Calculator."
+  template = "In the Calculator app, input '17×23'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -243,7 +243,7 @@ class CalculatorInputCos60(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input 'cos(60)' in Calculator."
+  template = "In the Calculator app, input 'cos(60)'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -266,7 +266,7 @@ class CalculatorInputCos180(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input 'cos(180)' in Calculator."
+  template = "In the Calculator app, input 'cos(180)'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -289,7 +289,7 @@ class CalculatorInputFactorial6(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input factorial of 6 in Calculator."
+  template = "In the Calculator app, input factorial of 6."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -312,7 +312,7 @@ class CalculatorInputSqrt25(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input square root of 25 in Calculator."
+  template = "In the Calculator app, input square root of 25."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -335,7 +335,7 @@ class CalculatorInputLn1234(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input 'ln(1234)' in Calculator."
+  template = "In the Calculator app, input 'ln(1234)'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -358,7 +358,7 @@ class CalculatorInput5Choose2(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input '5!÷(2!x3!)' in Calculator."
+  template = "In the Calculator app, input '5!÷(2!x3!)'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -381,7 +381,7 @@ class CalculatorInput10Choose2(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Input '10!÷(2!x8!)' in Calculator."
+  template = "In the Calculator app, input '10!÷(2!x8!)'."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -404,7 +404,7 @@ class CalculatorInputPercent50Of28(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Compute 50% of 28 ('50%28') in Calculator."
+  template = "In the Calculator app, compute 50% of 28 ('50%28')."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -427,7 +427,7 @@ class CalculatorGeometricMean(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Compute the geometric mean of 3, 4, and 5 in Calculator."
+  template = "In the Calculator app, compute the geometric mean of 3, 4, and 5."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -452,7 +452,7 @@ class CalculatorHarmonicMean(_CalculatorTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Compute the harmonic mean of 4 and 5 in Calculator."
+  template = "In the Calculator app, compute the harmonic mean of 4 and 5."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -478,8 +478,7 @@ class CalculatorConvert45DegreesToRadians(_CalculatorTaskEval):
       "required": [],
   }
   template = (
-      "Input the formula for converting 45 degrees to radians ('45xπ÷180') in"
-      " Calculator."
+      "In the Calculator app, input the formula for converting 45 degrees to radians ('45xπ÷180')."
   )
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
@@ -504,8 +503,7 @@ class CalculatorSumFirst5Fibonacci(_CalculatorTaskEval):
       "required": [],
   }
   template = (
-      "Input the formula for computing sum of the first 5 Fibonacci numbers in"
-      " Calculator."
+      "In the Calculator app, input the formula for computing sum of the first 5 Fibonacci numbers."
   )
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
@@ -531,8 +529,7 @@ class CalculatorSumFirst5Primes(_CalculatorTaskEval):
       "required": [],
   }
   template = (
-      "Input the formula for computing sum of the first 5 prime numbers in"
-      " Calculator."
+      "In the Calculator app, input the formula for computing sum of the first 5 prime numbers."
   )
 
   def is_successful(self, env: interface.AsyncEnv) -> float:

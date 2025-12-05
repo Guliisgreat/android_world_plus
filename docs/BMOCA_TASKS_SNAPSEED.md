@@ -14,20 +14,20 @@ The Snapseed app tasks test photo editing operations using the Google Snapseed a
 
 #### SnapseedTask1
 - **Complexity**: 1.0
-- **Description**: Open Snapseed app
-- **Goal**: "Open Snapseed"
+- **Description**: Open the Snapseed app app
+- **Goal**: "Open the Snapseed app"
 - **Success Criteria**: Snapseed main screen is open (detected by logo_view element)
 
 #### SnapseedTask2
 - **Complexity**: 1.5
-- **Description**: Open an image in Snapseed
-- **Goal**: "Open image in Snapseed"
+- **Description**: Open an image in the Snapseed app
+- **Goal**: "Open image in the Snapseed app"
 - **Success Criteria**: Image is loaded and looks_button is selected
 
 #### SnapseedTask5
 - **Complexity**: 1.5
 - **Description**: Open an image and navigate to tools tab
-- **Goal**: "Open image and go to tools tab in Snapseed"
+- **Goal**: "Open image and go to tools tab in the Snapseed app"
 - **Success Criteria**: Image is open AND tools tab is active (tools_button is selected)
 
 ### Filter Application
@@ -35,33 +35,33 @@ The Snapseed app tasks test photo editing operations using the Google Snapseed a
 #### SnapseedTask3
 - **Complexity**: 2.0
 - **Description**: Open an image and apply the "Pop" filter
-- **Goal**: "Open image and apply noir Pop filter in Snapseed"
+- **Goal**: "Open image and apply noir Pop filter in the Snapseed app"
 - **Success Criteria**: Image is open AND "Pop" filter is selected
 
 #### SnapseedTask4
 - **Complexity**: 2.0
 - **Description**: Open an image and apply the "Portrait" filter
-- **Goal**: "Open image and apply portrait filter in Snapseed"
+- **Goal**: "Open image and apply portrait filter in the Snapseed app"
 - **Success Criteria**: Image is open AND "Portrait" filter is selected
 
 ### Settings Configuration
 
 #### SnapseedTask6
 - **Complexity**: 2.0
-- **Description**: Enable dark theme in Snapseed
-- **Goal**: "Set dark theme in Snapseed"
+- **Description**: Enable dark theme in the Snapseed app
+- **Goal**: "Set dark theme in the Snapseed app"
 - **Success Criteria**: Dark theme preference is enabled in Preferences.xml (`pref_appearance_use_dark_theme` = true)
 
 #### SnapseedTask7
 - **Complexity**: 2.0
 - **Description**: Set export format quality to JPG 100%
-- **Goal**: "Set format quality to JPG 100% in Snapseed"
+- **Goal**: "Set format quality to JPG 100% in the Snapseed app"
 - **Success Criteria**: Format quality preference is set to "100" (`pref_export_setting_compression` = "100")
 
 #### SnapseedTask8
 - **Complexity**: 2.0
 - **Description**: Set image sizing to 2000 pixels
-- **Goal**: "Set image sizing to 2000 px in Snapseed"
+- **Goal**: "Set image sizing to 2000 px in the Snapseed app"
 - **Success Criteria**: Image sizing preference is set to "2000" (`pref_export_setting_long_edge` = "2000")
 
 ### Combined Tasks
@@ -69,19 +69,19 @@ The Snapseed app tasks test photo editing operations using the Google Snapseed a
 #### SnapseedTask9
 - **Complexity**: 3.0
 - **Description**: Apply "Pop" filter after enabling dark theme
-- **Goal**: "Apply noir Pop filter to an image after setting dark theme in Snapseed"
+- **Goal**: "Apply noir Pop filter to an image after setting dark theme in the Snapseed app"
 - **Success Criteria**: Dark theme is enabled AND "Pop" filter is applied to an image
 
 #### SnapseedTask10
 - **Complexity**: 3.0
 - **Description**: Apply "Pop" filter after setting format quality to 100%
-- **Goal**: "Apply noir Pop filter to an image after setting format quality to JPG 100% in Snapseed"
+- **Goal**: "Apply noir Pop filter to an image after setting format quality to JPG 100% in the Snapseed app"
 - **Success Criteria**: Format quality is "100" AND "Pop" filter is applied
 
 #### SnapseedTask11
 - **Complexity**: 3.0
 - **Description**: Apply "Pop" filter after setting image sizing to 2000px
-- **Goal**: "Apply noir Pop filter to an image after setting image sizing to 2000 px in Snapseed"
+- **Goal**: "Apply noir Pop filter to an image after setting image sizing to 2000 px in the Snapseed app"
 - **Success Criteria**: Image sizing is "2000" AND "Pop" filter is applied
 
 ## Testing

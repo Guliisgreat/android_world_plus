@@ -462,7 +462,7 @@ class PiMusicQueryTotalSongs(_PiMusicQuery):
         },
         'required': ['total_songs'],
     }
-    template = 'In Pi Music Player, tell me how many songs do I have in total?'
+    template = 'In the Pi Music Player app, tell me how many songs do I have in total?'
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
         # Query local_music_store table for count
@@ -490,7 +490,7 @@ class PiMusicQueryArtistSongCount(_PiMusicQuery):
         },
         'required': ['artist', 'song_count'],
     }
-    template = "In Pi Music Player, help me check how many {artist}'s songs do I have?"
+    template = "In the Pi Music Player app, help me check how many {artist}'s songs do I have?"
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
         artist = self.params['artist']
@@ -525,7 +525,7 @@ class PiMusicQuerySongAlbum(_PiMusicQuery):
         },
         'required': ['song_title', 'album_name'],
     }
-    template = 'In Pi Music Player, what is the album name of the song {song_title}?'
+    template = 'In the Pi Music Player app, what is the album name of the song {song_title}?'
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
         title = self.params['song_title']
@@ -558,7 +558,7 @@ class PiMusicQueryLongestSongDuration(_PiMusicQuery):
         },
         'required': ['artist', 'duration_ms', 'duration_formatted'],
     }
-    template = 'In Pi Music Player, what is the duration time of the longest song by {artist}?'
+    template = 'In the Pi Music Player app, what is the duration time of the longest song by {artist}?'
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
         artist = self.params['artist']
@@ -602,7 +602,7 @@ class PiMusicQuerySortedSongsByTitle(_PiMusicQuery):
         },
         'required': ['second_song', 'fourth_song'],
     }
-    template = 'In Pi Music Player, sort the songs by title in ascending order. What are the second and fourth songs?'
+    template = 'In the Pi Music Player app, sort the songs by title in ascending order. What are the second and fourth songs?'
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
         return f"{self.params['second_song']} and {self.params['fourth_song']}"
@@ -649,7 +649,7 @@ class PiMusicQueryArtistTotalDuration(_PiMusicQuery):
         },
         'required': ['artist', 'total_duration_ms', 'total_duration_formatted'],
     }
-    template = "In Pi Music Player, what is the total duration time of all of {artist}'s songs?"
+    template = "In the Pi Music Player app, what is the total duration time of all of {artist}'s songs?"
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
         artist = self.params['artist']
@@ -694,11 +694,11 @@ class PiMusicPlayFromPlaylist(_PiMusicOperation):
         },
         'required': ['playlist_name', 'position'],
     }
-    template = "In Pi Music Player, play the first song in '{playlist_name}' playlist."
+    template = "In the Pi Music Player app, play the first song in '{playlist_name}' playlist."
 
     @property
     def goal(self) -> str:
-        return f"In Pi Music Player, play the first song in '{self.params['playlist_name']}' playlist."
+        return f"In the Pi Music Player app, play the first song in '{self.params['playlist_name']}' playlist."
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         """UI-based validation: check for playback indicators."""
@@ -734,7 +734,7 @@ class PiMusicSortByDurationDescending(_PiMusicOperation):
         },
         'required': ['artist'],
     }
-    template = "In Pi Music Player, sort {artist}'s songs by duration time in descending order."
+    template = "In the Pi Music Player app, sort {artist}'s songs by duration time in descending order."
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         """UI-based validation: check for artist display and sort state."""
@@ -768,7 +768,7 @@ class PiMusicCreatePlaylist(_PiMusicOperation):
         },
         'required': ['playlist_name'],
     }
-    template = "In Pi Music Player, create a playlist named '{playlist_name}' for me."
+    template = "In the Pi Music Player app, create a playlist named '{playlist_name}' for me."
 
     def _capture_state(self, env: interface.AsyncEnv) -> list[str]:
         """Capture existing playlist names before operation."""
@@ -813,11 +813,11 @@ class PiMusicPauseAndSeek(_PiMusicOperation):
         },
         'required': ['seek_minutes', 'seek_seconds'],
     }
-    template = 'In Pi Music Player, pause the currently playing song and seek to {seek_minutes} minute and {seek_seconds} seconds.'
+    template = 'In the Pi Music Player app, pause the currently playing song and seek to {seek_minutes} minute and {seek_seconds} seconds.'
 
     @property
     def goal(self) -> str:
-        return f'In Pi Music Player, pause the currently playing song and seek to {self.params["seek_minutes"]} minute and {self.params["seek_seconds"]} seconds.'
+        return f'In the Pi Music Player app, pause the currently playing song and seek to {self.params["seek_minutes"]} minute and {self.params["seek_seconds"]} seconds.'
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         """UI-based validation: check for paused state and seek position."""
@@ -853,7 +853,7 @@ class PiMusicPlaySongByTitleArtist(_PiMusicOperation):
         },
         'required': ['song_title', 'artist'],
     }
-    template = 'In Pi Music Player, play {song_title} by {artist}.'
+    template = 'In the Pi Music Player app, play {song_title} by {artist}.'
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         """UI-based validation: check for song title in now-playing area."""
@@ -886,7 +886,7 @@ class PiMusicSortByDurationAscending(_PiMusicOperation):
         'properties': {},
         'required': [],
     }
-    template = 'In Pi Music Player, sort the songs by duration time in ascending order.'
+    template = 'In the Pi Music Player app, sort the songs by duration time in ascending order.'
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
         if _check_ui_for_text(env, 'duration') or _check_ui_for_text(env, 'ascending'):

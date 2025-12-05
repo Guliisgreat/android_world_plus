@@ -15,31 +15,31 @@ The Maps.me app tasks test offline navigation and mapping operations using the M
 #### MapsMeCheckWalkingDistanceTime
 - **Complexity**: 2.5
 - **Description**: Check walking distance and time between two locations
-- **Goal**: "In Maps.me, check the walking distance and time between {origin} and {destination}"
+- **Goal**: "In the MAPS.ME app, check the walking distance and time between {origin} and {destination}"
 - **Success Criteria**: Agent provides answer containing distance/time units (km, mi, min, hour)
 
 #### MapsMeCheckDrivingDistanceTime
 - **Complexity**: 2.5
 - **Description**: Check driving distance and time between two locations
-- **Goal**: "In Maps.me, check the driving distance and time between {origin} and {destination}"
+- **Goal**: "In the MAPS.ME app, check the driving distance and time between {origin} and {destination}"
 - **Success Criteria**: Agent provides answer containing distance/time information
 
 #### MapsMeCheckRidingTime
 - **Complexity**: 2.5
 - **Description**: Check cycling/riding time between two locations
-- **Goal**: "In Maps.me, check the riding time between {origin} and {destination}"
+- **Goal**: "In the MAPS.ME app, check the riding time between {origin} and {destination}"
 - **Success Criteria**: Agent provides answer with time information
 
 #### MapsMeCheckPublicTransportRoute
 - **Complexity**: 3.0
 - **Description**: Check route by public transportation
-- **Goal**: "In Maps.me, check the route by public transportation between {origin} and {destination}"
+- **Goal**: "In the MAPS.ME app, check the route by public transportation between {origin} and {destination}"
 - **Success Criteria**: Agent provides route/time information
 
 #### MapsMeCompareRidingVsPublicTransport
 - **Complexity**: 3.5
 - **Description**: Compare travel times between riding and public transport
-- **Goal**: "In Maps.me, compare which takes less time to travel between {origin} and {destination}, by riding or by public transportation?"
+- **Goal**: "In the MAPS.ME app, compare which takes less time to travel between {origin} and {destination}, by riding or by public transportation?"
 - **Success Criteria**: Agent mentions either "riding/bike/cycling" or "public/transit/bus"
 
 ### Query Tasks - Nearby Places (4)
@@ -47,25 +47,25 @@ The Maps.me app tasks test offline navigation and mapping operations using the M
 #### MapsMeCheckNearestPlace
 - **Complexity**: 2.0
 - **Description**: Find the nearest place of a specific type
-- **Goal**: "In Maps.me, check the nearest {place_type} and tell me what is it"
+- **Goal**: "In the MAPS.ME app, check the nearest {place_type} and tell me what is it"
 - **Success Criteria**: Agent provides place name, optionally verified via PlacesHistory SQLite table
 
 #### MapsMeCheckNearestPlaceWalkTime
 - **Complexity**: 2.5
 - **Description**: Find nearest place and walking time to it
-- **Goal**: "In Maps.me, check the nearest {place_type}, and tell me the time it will take to walk to the {place_type}."
+- **Goal**: "In the MAPS.ME app, check the nearest {place_type}, and tell me the time it will take to walk to the {place_type}."
 - **Success Criteria**: Agent provides time information (min, minute, hour, etc.)
 
 #### MapsMeCheckNearestHotel
 - **Complexity**: 2.0
 - **Description**: Find the nearest hotel
-- **Goal**: "In Maps.me, check the nearest hotel, tell me what is it"
+- **Goal**: "In the MAPS.ME app, check the nearest hotel, tell me what is it"
 - **Success Criteria**: Agent provides hotel name, verified via PlacesHistory.isHotel field
 
 #### MapsMeCheckNearestPlaceDriveTime
 - **Complexity**: 2.5
 - **Description**: Find nearest specific place and driving time
-- **Goal**: "In Maps.me, check the nearest {place_name}, and tell me how long it will take to drive to the {place_name}"
+- **Goal**: "In the MAPS.ME app, check the nearest {place_name}, and tell me how long it will take to drive to the {place_name}"
 - **Success Criteria**: Agent provides time information
 
 ### Operation Tasks - Bookmarks (1)
@@ -73,7 +73,7 @@ The Maps.me app tasks test offline navigation and mapping operations using the M
 #### MapsMeAddWorkPlace
 - **Complexity**: 3.0
 - **Description**: Add an address to Work bookmark
-- **Goal**: "In Maps.me, add the address of {place_name} to my Work place"
+- **Goal**: "In the MAPS.ME app, add the address of {place_name} to my Work place"
 - **Success Criteria**: "Work" category and matching bookmark found in favorites SQLite database
 
 ### Operation Tasks - Navigation (5)
@@ -81,31 +81,31 @@ The Maps.me app tasks test offline navigation and mapping operations using the M
 #### MapsMeNavigateToLocation
 - **Complexity**: 2.0
 - **Description**: Navigate from current location to a destination
-- **Goal**: "In Maps.me, navigate from my location to {destination}"
+- **Goal**: "In the MAPS.ME app, navigate from my location to {destination}"
 - **Success Criteria**: Destination visible in UI AND navigation mode active
 
 #### MapsMeNavigateToStanford
 - **Complexity**: 2.0
 - **Description**: Navigate to Stanford University
-- **Goal**: "In Maps.me, navigate from my location to Stanford University"
+- **Goal**: "In the MAPS.ME app, navigate from my location to Stanford University"
 - **Success Criteria**: "Stanford" visible AND navigation active
 
 #### MapsMeNavigateToUniversitySouth
 - **Complexity**: 2.0
 - **Description**: Navigate to University South
-- **Goal**: "In Maps.me, navigate from my location to University South"
+- **Goal**: "In the MAPS.ME app, navigate from my location to University South"
 - **Success Criteria**: "University South" visible AND navigation active
 
 #### MapsMeNavigateToOpenAI
 - **Complexity**: 2.0
 - **Description**: Navigate to OpenAI
-- **Goal**: "In Maps.me, navigate from my location to OpenAI"
+- **Goal**: "In the MAPS.ME app, navigate from my location to OpenAI"
 - **Success Criteria**: "OpenAI" visible AND navigation active
 
 #### MapsMeNavigateToBerkeley
 - **Complexity**: 2.0
 - **Description**: Navigate to UC Berkeley
-- **Goal**: "In Maps.me, navigate from my location to University of California, Berkeley"
+- **Goal**: "In the MAPS.ME app, navigate from my location to University of California, Berkeley"
 - **Success Criteria**: "Berkeley" or "California" visible AND navigation active
 
 ## Testing

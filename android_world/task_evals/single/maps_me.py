@@ -413,7 +413,7 @@ class _MapsMeQuery(_MapsMe):
 class MapsMeCheckWalkingDistanceTime(_MapsMeQuery):
   """Query: Check walking distance and time between two locations."""
 
-  template = 'In Maps.me, check the walking distance and time between {origin} and {destination}'
+  template = 'In the MAPS.ME app, check the walking distance and time between {origin} and {destination}'
   complexity = 2.5
 
   @property
@@ -429,7 +429,7 @@ class MapsMeCheckWalkingDistanceTime(_MapsMeQuery):
 class MapsMeCheckDrivingDistanceTime(_MapsMeQuery):
   """Query: Check driving distance and time between two locations."""
 
-  template = 'In Maps.me, check the driving distance and time between {origin} and {destination}'
+  template = 'In the MAPS.ME app, check the driving distance and time between {origin} and {destination}'
   complexity = 2.5
 
   @property
@@ -445,7 +445,7 @@ class MapsMeCheckDrivingDistanceTime(_MapsMeQuery):
 class MapsMeCheckRidingTime(_MapsMeQuery):
   """Query: Check riding/cycling time between two locations."""
 
-  template = 'In Maps.me, check the riding time between {origin} and {destination}'
+  template = 'In the MAPS.ME app, check the riding time between {origin} and {destination}'
   complexity = 2.5
 
   @property
@@ -461,7 +461,7 @@ class MapsMeCheckRidingTime(_MapsMeQuery):
 class MapsMeCheckPublicTransportRoute(_MapsMeQuery):
   """Query: Check route by public transportation between two locations."""
 
-  template = 'In Maps.me, check the route by public transportation between {origin} and {destination}'
+  template = 'In the MAPS.ME app, check the route by public transportation between {origin} and {destination}'
   complexity = 3
 
   @property
@@ -478,7 +478,7 @@ class MapsMeCompareRidingVsPublicTransport(_MapsMeQuery):
   """Query: Compare travel time between riding and public transportation."""
 
   template = (
-      'In Maps.me, compare which takes less time to travel between {origin} and '
+      'In the MAPS.ME app, compare which takes less time to travel between {origin} and '
       '{destination}, by riding or by public transportation?'
   )
   complexity = 3.5
@@ -524,7 +524,7 @@ class MapsMeCheckNearestPlace(_MapsMeQuery):
   2. Optionally verifying via PlacesHistory in search-history database
   """
 
-  template = 'In Maps.me, check the nearest {place_type} and tell me what is it'
+  template = 'In the MAPS.ME app, check the nearest {place_type} and tell me what is it'
   complexity = 2
 
   def __init__(self, params: dict[str, Any]):
@@ -584,7 +584,7 @@ class MapsMeCheckNearestPlaceWalkTime(_MapsMeQuery):
   """
 
   template = (
-      'In Maps.me, check the nearest {place_type}, and tell me the time it will take '
+      'In the MAPS.ME app, check the nearest {place_type}, and tell me the time it will take '
       'to walk to the {place_type}.'
   )
   complexity = 2.5
@@ -642,7 +642,7 @@ class MapsMeCheckNearestHotel(_MapsMeQuery):
   Validates via agent answer + PlacesHistory verification for hotels.
   """
 
-  template = 'In Maps.me, check the nearest hotel, tell me what is it'
+  template = 'In the MAPS.ME app, check the nearest hotel, tell me what is it'
   complexity = 2
 
   def __init__(self, params: dict[str, Any]):
@@ -697,7 +697,7 @@ class MapsMeCheckNearestPlaceDriveTime(_MapsMeQuery):
   """
 
   template = (
-      'In Maps.me, check the nearest {place_name}, and tell me how long it will take '
+      'In the MAPS.ME app, check the nearest {place_name}, and tell me how long it will take '
       'to drive to the {place_name}'
   )
   complexity = 2.5
@@ -789,7 +789,7 @@ class MapsMeAddWorkPlace(_MapsMeOperation):
   3. The bookmark is linked to the Work category
   """
 
-  template = 'In Maps.me, add the address of {place_name} to my Work place'
+  template = 'In the MAPS.ME app, add the address of {place_name} to my Work place'
   complexity = 3
 
   def __init__(self, params: dict[str, Any]):
@@ -857,7 +857,7 @@ class MapsMeAddWorkPlace(_MapsMeOperation):
 class MapsMeNavigateToLocation(_MapsMeOperation):
   """Operation: Navigate from current location to a destination."""
 
-  template = 'In Maps.me, navigate from my location to {destination}'
+  template = 'In the MAPS.ME app, navigate from my location to {destination}'
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
@@ -891,7 +891,7 @@ class MapsMeNavigateToLocation(_MapsMeOperation):
 class MapsMeNavigateToStanford(_MapsMeOperation):
   """Operation: Navigate to Stanford University."""
 
-  template = 'In Maps.me, navigate from my location to Stanford University'
+  template = 'In the MAPS.ME app, navigate from my location to Stanford University'
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
@@ -912,7 +912,7 @@ class MapsMeNavigateToStanford(_MapsMeOperation):
 class MapsMeNavigateToUniversitySouth(_MapsMeOperation):
   """Operation: Navigate to University South."""
 
-  template = 'In Maps.me, navigate from my location to University South'
+  template = 'In the MAPS.ME app, navigate from my location to University South'
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
@@ -933,7 +933,7 @@ class MapsMeNavigateToUniversitySouth(_MapsMeOperation):
 class MapsMeNavigateToOpenAI(_MapsMeOperation):
   """Operation: Navigate to OpenAI."""
 
-  template = 'In Maps.me, navigate from my location to OpenAI'
+  template = 'In the MAPS.ME app, navigate from my location to OpenAI'
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:
@@ -954,7 +954,7 @@ class MapsMeNavigateToOpenAI(_MapsMeOperation):
 class MapsMeNavigateToBerkeley(_MapsMeOperation):
   """Operation: Navigate to University of California, Berkeley."""
 
-  template = 'In Maps.me, navigate from my location to University of California, Berkeley'
+  template = 'In the MAPS.ME app, navigate from my location to University of California, Berkeley'
   complexity = 2
 
   def _validate_operation(self, env: interface.AsyncEnv) -> float:

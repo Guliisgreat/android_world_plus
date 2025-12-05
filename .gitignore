@@ -23,3 +23,10 @@ poetry.lock
 
 # PyCharm
 .idea
+
+# Temporary and generated files
+tmp_lg/
+web_ui/novnc/
+web_ui/scrcpy-linux-x86_64-v3.3.3.tar.gz
+web_ui/scrcpy-linux-x86_64-v3.3.3/
+web_ui/*.backup_*

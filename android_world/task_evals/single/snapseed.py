@@ -28,14 +28,14 @@ from android_world.utils import file_utils
 
 PACKAGE_NAME = "com.niksoftware.snapseed"
 PREFERENCES_PATH = f"/data/data/{PACKAGE_NAME}/shared_prefs/Preferences.xml"
-# Permanent file location for debugging
-PERMANENT_PREFERENCES_FILE = "/tmp/snapseed_preferences.xml"
+# Debug file location (optional - validation works even if this fails)
+DEBUG_PREFERENCES_FILE = "/tmp/snapseed_preferences.xml"
 
 
 def _read_preferences_xml(env: interface.AsyncEnv) -> ET.Element | None:
     """Read and parse Snapseed Preferences.xml file.
     
-    Creates a permanent copy at PERMANENT_PREFERENCES_FILE for debugging.
+    Optionally saves a copy to DEBUG_PREFERENCES_FILE for debugging.
     
     Args:
         env: The AndroidWorld environment.
@@ -61,21 +61,17 @@ def _read_preferences_xml(env: interface.AsyncEnv) -> ET.Element | None:
         )
         adb_utils.check_ok(pull_response)
         
-        # Save to permanent file for debugging
-        os.makedirs(os.path.dirname(PERMANENT_PREFERENCES_FILE), exist_ok=True)
-        with open(PERMANENT_PREFERENCES_FILE, "wb") as f:
-            f.write(pull_response.pull.content)
+        # Try to save to debug file (optional - won't break validation if it fails)
+        try:
+            os.makedirs(os.path.dirname(DEBUG_PREFERENCES_FILE), exist_ok=True)
+            with open(DEBUG_PREFERENCES_FILE, "wb") as f:
+                f.write(pull_response.pull.content)
+            logging.info("Saved Preferences.xml to debug location: %s", DEBUG_PREFERENCES_FILE)
+        except Exception as e:
+            logging.debug("Could not save debug file (non-critical): %s", e)
         
-        logging.info("Saved Preferences.xml to permanent location: %s", PERMANENT_PREFERENCES_FILE)
-        
-        # Verify file exists and read it
-        if not os.path.exists(PERMANENT_PREFERENCES_FILE):
-            logging.warning("Failed to create permanent Preferences.xml file")
-            return None
-        
-        # Parse the XML file
-        tree = ET.parse(PERMANENT_PREFERENCES_FILE)
-        root = tree.getroot()
+        # Parse the XML content directly in memory
+        root = ET.fromstring(pull_response.pull.content)
         
         logging.info("Successfully read Preferences.xml (root tag: %s, %d children)", 
                      root.tag, len(root))
@@ -266,7 +262,7 @@ class SnapseedTask1(_Snapseed):
     """Open Snapseed."""
 
     complexity = 1.0
-    template = "Open Snapseed"
+    template = "Open the Snapseed app."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if Snapseed is open."""
@@ -283,7 +279,7 @@ class SnapseedTask2(_Snapseed):
     """Open image in Snapseed."""
 
     complexity = 1.5
-    template = "Open image in Snapseed"
+    template = "In the Snapseed app, open an image."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if image is open."""
@@ -300,7 +296,7 @@ class SnapseedTask3(_Snapseed):
     """Open image and apply noir Pop filter in Snapseed."""
 
     complexity = 2.0
-    template = "Open image and apply noir Pop filter in Snapseed"
+    template = "In the Snapseed app, open an image and apply noir Pop filter."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if image is open and Pop filter is applied."""
@@ -319,7 +315,7 @@ class SnapseedTask4(_Snapseed):
     """Open image and apply portrait filter in Snapseed."""
 
     complexity = 2.0
-    template = "Open image and apply portrait filter in Snapseed"
+    template = "In the Snapseed app, open an image and apply portrait filter."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if image is open and Portrait filter is applied."""
@@ -338,7 +334,7 @@ class SnapseedTask5(_Snapseed):
     """Open image and go to tools tab in Snapseed."""
 
     complexity = 1.5
-    template = "Open image and go to tools tab in Snapseed"
+    template = "In the Snapseed app, open an image and go to tools tab."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if image is open and tools tab is active."""
@@ -357,7 +353,7 @@ class SnapseedTask6(_Snapseed):
     """Set dark theme in Snapseed."""
 
     complexity = 2.0
-    template = "Set dark theme in Snapseed"
+    template = "In the Snapseed app, set dark theme."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if dark theme is enabled."""
@@ -373,7 +369,7 @@ class SnapseedTask7(_Snapseed):
     """Set format quality to JPG 100% in Snapseed."""
 
     complexity = 2.0
-    template = "Set format quality to JPG 100% in Snapseed"
+    template = "In the Snapseed app, set format quality to JPG 100%."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if format quality is set to 100."""
@@ -390,7 +386,7 @@ class SnapseedTask8(_Snapseed):
     """Set image sizing to 2000 px in Snapseed."""
 
     complexity = 2.0
-    template = "Set image sizing to 2000 px in Snapseed"
+    template = "In the Snapseed app, set image sizing to 2000 px."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if image sizing is set to 2000."""
@@ -407,7 +403,7 @@ class SnapseedTask9(_Snapseed):
     """Apply noir Pop filter to an image after setting dark theme in Snapseed."""
 
     complexity = 3.0
-    template = "Apply noir Pop filter to an image after setting dark theme in Snapseed"
+    template = "In the Snapseed app, apply noir Pop filter to an image after setting dark theme."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if dark theme is set and Pop filter is applied."""
@@ -426,7 +422,7 @@ class SnapseedTask10(_Snapseed):
     """Apply noir Pop filter to an image after setting format quality to JPG 100% in Snapseed."""
 
     complexity = 3.0
-    template = "Apply noir Pop filter to an image after setting format quality to JPG 100% in Snapseed"
+    template = "In the Snapseed app, apply noir Pop filter to an image after setting format quality to JPG 100%."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if quality is 100 and Pop filter is applied."""
@@ -445,7 +441,7 @@ class SnapseedTask11(_Snapseed):
     """Apply noir Pop filter to an image after setting image sizing to 2000 px in Snapseed."""
 
     complexity = 3.0
-    template = "Apply noir Pop filter to an image after setting image sizing to 2000 px in Snapseed"
+    template = "In the Snapseed app, apply noir Pop filter to an image after setting image sizing to 2000 px."
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         """Check if sizing is 2000 and Pop filter is applied."""

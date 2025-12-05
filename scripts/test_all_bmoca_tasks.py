@@ -17,6 +17,16 @@
 This script can test individual tasks or all tasks from Calculator, Snapseed,
 or Wikipedia apps using the m3a GPT-4 agent. Useful for testing and debugging
 BMOCA tasks.
+
+Usage:
+    # List available tasks for an app
+    python scripts/test_all_bmoca_tasks.py --app calculator
+    
+    # Run a specific task
+    python scripts/test_all_bmoca_tasks.py --app calculator --task CalculatorInput1Plus1
+    
+    # Run ALL tasks for an app
+    python scripts/test_all_bmoca_tasks.py --app calculator --run_all
 """
 
 from collections.abc import Sequence
@@ -190,6 +200,24 @@ _TASK = flags.DEFINE_string(
     'The specific task to test. If not provided, will list available tasks for the selected app.',
 )
 
+_RUN_ALL = flags.DEFINE_boolean(
+    'run_all',
+    False,
+    'Run all tasks for the specified app sequentially.',
+)
+
+_MAX_STEPS = flags.DEFINE_integer(
+    'max_steps',
+    None,
+    'Maximum number of steps for the agent (overrides complexity-based calculation).',
+)
+
+_GRPC_PORT = flags.DEFINE_integer(
+    'grpc_port',
+    8554,
+    'The gRPC port for communication with the emulator.',
+)
+
 
 def _get_available_tasks(app_name: str) -> list[str]:
   """Get available tasks for the specified app."""
@@ -198,41 +226,180 @@ def _get_available_tasks(app_name: str) -> list[str]:
   return _APP_TASKS.get(app_name, [])
 
 
+def _get_app_display_name(app_name: str) -> str:
+  """Get display name for the app."""
+  display_names = {
+      'calculator': 'Calculator',
+      'snapseed': 'Snapseed (Photo Editor)',
+      'wikipedia': 'Wikipedia',
+      'all': 'All BMOCA Apps',
+  }
+  return display_names.get(app_name, app_name)
+
+
+def _run_single_task(task_name: str, app_name: str, env, aw_registry) -> dict:
+  """Run a single task and return results.
+  
+  Returns:
+      dict with keys: task_name, goal, score, completed, steps, max_steps, success
+  """
+  available_tasks = _get_available_tasks(app_name)
+  
+  if task_name not in aw_registry:
+    raise ValueError(
+        f'Task {task_name} not found in registry.'
+        f' Available tasks: {", ".join(available_tasks)}'
+    )
+  
+  # Get the task from registry
+  print(f'Loading task: {task_name}...')
+  task_type: Type[task_eval.TaskEval] = aw_registry[task_name]
+  params = task_type.generate_random_params()
+  task = task_type(params)
+  task.initialize_task(env)
+  print('✓ Task loaded\n')
+  
+  # Initialize M3A agent with GPT-4
+  print('Initializing M3A agent with GPT-4o...')
+  agent = m3a.M3A(env, infer.Gpt4Wrapper('gpt-4o'))
+  agent.name = 'm3a_gpt4v'
+  agent.reset(go_home_on_reset=task.start_on_home_screen)
+  print('✓ Agent initialized\n')
+  
+  # Run the task
+  print('=' * 80)
+  print(f'Goal: {task.goal}')
+  print('=' * 80)
+  print()
+  
+  # Calculate step budget based on complexity or use override
+  if _MAX_STEPS.value is not None:
+    max_steps = _MAX_STEPS.value
+  else:
+    max_steps = int(10 * task.complexity)
+  
+  print(f'Running task with max {max_steps} steps...')
+  print(f'Complexity: {task.complexity}')
+  print(f'Start on home screen: {task.start_on_home_screen}')
+  print()
+  
+  episode_result = episode_runner.run_episode(
+      goal=task.goal,
+      agent=agent,
+      max_n_steps=max_steps,
+      start_on_home_screen=task.start_on_home_screen,
+      termination_fn=None,
+  )
+  
+  # Check if task was successful
+  task_score = task.is_successful(env)
+  task_successful = task_score >= 1.0
+  agent_completed = episode_result.done
+  
+  # Calculate steps taken from step_data
+  steps_taken = len(episode_result.step_data.get(constants.STEP_NUMBER, []))
+  
+  print()
+  print('=' * 80)
+  if task_successful and agent_completed:
+    print('✅ Task Successful!')
+    success = True
+  elif task_score > 0.5 and agent_completed:
+    print(f'⚠️  Task Partially Successful (score: {task_score:.2f})')
+    success = False
+  elif task_successful:
+    print('⚠️  Task conditions met, but agent did not indicate completion')
+    success = True
+  elif agent_completed:
+    print('❌ Agent completed, but task conditions not met')
+    success = False
+  else:
+    print('❌ Task Failed')
+    success = False
+  
+  print('=' * 80)
+  print(f'Task: {task_name}')
+  print(f'App: {_get_app_display_name(app_name)}')
+  print(f'Goal: {task.goal}')
+  print(f'Complexity: {task.complexity}')
+  print(f'Steps taken: {steps_taken}/{max_steps}')
+  print(f'Agent completed: {agent_completed}')
+  print(f'Task score: {task_score:.2f}')
+  print('=' * 80)
+  
+  return {
+      'task_name': task_name,
+      'goal': task.goal,
+      'score': task_score,
+      'completed': agent_completed,
+      'steps': steps_taken,
+      'max_steps': max_steps,
+      'success': success,
+  }
+
+
 def _main() -> None:
   """Runs BMOCA tasks with M3A agent."""
   app_name = _APP.value
   task_name = _TASK.value
+  run_all = _RUN_ALL.value
   
   # Get available tasks for the app
   available_tasks = _get_available_tasks(app_name)
   
-  # If no task specified, list available tasks
-  if task_name is None:
+  # If no task specified and not run_all, list available tasks
+  if task_name is None and not run_all:
     print('=' * 80)
-    print(f'Available tasks for app: {app_name}')
+    print(f'Available tasks for: {_get_app_display_name(app_name)}')
     print('=' * 80)
     print(f'\nTotal tasks: {len(available_tasks)}\n')
-    for i, task in enumerate(available_tasks, 1):
-      print(f'  {i:2d}. {task}')
-    print('\nTo test a specific task, use: --task <task_name>')
+    
+    # Group tasks by app for better readability
+    if app_name == 'all':
+      print('CALCULATOR TASKS:')
+      for i, task in enumerate(_CALCULATOR_TASKS, 1):
+        print(f'  {i:2d}. {task}')
+      print(f'\nSNAPSEED TASKS:')
+      for i, task in enumerate(_SNAPSEED_TASKS, 1):
+        print(f'  {i:2d}. {task}')
+      print(f'\nWIKIPEDIA TASKS:')
+      for i, task in enumerate(_WIKIPEDIA_TASKS, 1):
+        print(f'  {i:2d}. {task}')
+    else:
+      for i, task in enumerate(available_tasks, 1):
+        print(f'  {i:2d}. {task}')
+    
+    print(f'\nTo test a specific task, use: --task <task_name>')
+    print(f'To run all tasks, use: --run_all')
     print(f'Example: python {sys.argv[0]} --app {app_name} --task {available_tasks[0]}')
+    print(f'Example: python {sys.argv[0]} --app {app_name} --run_all')
     print('=' * 80)
     return
   
-  # Validate task name
-  if task_name not in available_tasks:
-    print('=' * 80)
-    print(f'ERROR: Task "{task_name}" not found for app "{app_name}"')
-    print('=' * 80)
-    print(f'\nAvailable tasks for {app_name}:')
-    for task in available_tasks:
-      print(f'  - {task}')
-    print('=' * 80)
-    sys.exit(1)
+  # Determine which tasks to run
+  if run_all:
+    tasks_to_run = available_tasks
+  else:
+    # Validate task name
+    if task_name not in available_tasks:
+      print('=' * 80)
+      print(f'ERROR: Task "{task_name}" not found for app "{app_name}"')
+      print('=' * 80)
+      print(f'\nAvailable tasks for {_get_app_display_name(app_name)}:')
+      for task in available_tasks:
+        print(f'  - {task}')
+      print('=' * 80)
+      sys.exit(1)
+    tasks_to_run = [task_name]
   
   print('=' * 80)
-  print(f'Testing BMOCA Task: {task_name}')
-  print(f'App: {app_name}')
+  if run_all:
+    print(f'Running ALL {len(tasks_to_run)} tasks for: {_get_app_display_name(app_name)}')
+  else:
+    print(f'Testing BMOCA Task: {task_name}')
+  print(f'App: {_get_app_display_name(app_name)}')
+  print(f'Console Port: {_DEVICE_CONSOLE_PORT.value}')
+  print(f'gRPC Port: {_GRPC_PORT.value}')
   print('=' * 80)
 
   # Check for OpenAI API key
@@ -248,83 +415,67 @@ def _main() -> None:
       console_port=_DEVICE_CONSOLE_PORT.value,
       emulator_setup=False,  # No setup needed
       adb_path=_ADB_PATH.value,
+      grpc_port=_GRPC_PORT.value,
   )
-  env.reset(go_home=True)
   print('✓ Connected to emulator\n')
 
-  # Get the task from registry
-  print(f'Loading task: {task_name}...')
+  # Get task registry
   task_registry = registry.TaskRegistry()
   aw_registry = task_registry.get_registry(
       registry.TaskRegistry.ANDROID_WORLD_FAMILY
   )
 
-  if task_name not in aw_registry:
-    raise ValueError(
-        f'Task {task_name} not found in registry.'
-        f' Available tasks: {", ".join(available_tasks)}'
-    )
+  # Run tasks
+  results = []
+  for i, current_task in enumerate(tasks_to_run, 1):
+    if run_all:
+      print()
+      print('#' * 80)
+      print(f'# Task {i}/{len(tasks_to_run)}: {current_task}')
+      print('#' * 80)
+      print()
+    
+    try:
+      result = _run_single_task(current_task, app_name, env, aw_registry)
+      results.append(result)
+    except Exception as e:
+      print(f'❌ Error running task {current_task}: {e}')
+      results.append({
+          'task_name': current_task,
+          'goal': 'N/A',
+          'score': 0.0,
+          'completed': False,
+          'steps': 0,
+          'max_steps': 0,
+          'success': False,
+          'error': str(e),
+      })
 
-  task_type: Type[task_eval.TaskEval] = aw_registry[task_name]
-  params = task_type.generate_random_params()
-  task = task_type(params)
-  task.initialize_task(env)
-  print('✓ Task loaded\n')
-
-  # Initialize M3A agent with GPT-4
-  print('Initializing M3A agent with GPT-4...')
-  agent = m3a.M3A(env, infer.Gpt4Wrapper('gpt-4-turbo-2024-04-09'))
-  agent.name = 'm3a_gpt4v'
-  agent.reset(go_home_on_reset=False)
-  print('✓ Agent initialized\n')
-
-  # Run the task
-  print('=' * 80)
-  print(f'Goal: {task.goal}')
-  print('=' * 80)
-  print()
-
-  # Calculate step budget based on complexity
-  # Formula: 10 * complexity (same as suite_utils._allocate_step_budget)
-  max_steps = int(10 * task.complexity)
-  print(f'Running task with max {max_steps} steps...')
-  print(f'Complexity: {task.complexity}')
-  print()
-
-  episode_result = episode_runner.run_episode(
-      goal=task.goal,
-      agent=agent,
-      max_n_steps=max_steps,
-      start_on_home_screen=task.start_on_home_screen,
-      termination_fn=None,
-  )
-
-  # Check if task was successful
-  task_successful = task.is_successful(env) == 1.0
-  agent_completed = episode_result.done
-
-  # Calculate steps taken from step_data
-  steps_taken = len(episode_result.step_data.get(constants.STEP_NUMBER, []))
-
-  print()
-  print('=' * 80)
-  if task_successful and agent_completed:
-    print('✅ Task Successful!')
-  elif task_successful:
-    print('⚠️  Task conditions met, but agent did not complete')
-  elif agent_completed:
-    print('❌ Agent completed, but task conditions not met')
-  else:
-    print('❌ Task Failed')
-  print('=' * 80)
-  print(f'Task: {task_name}')
-  print(f'App: {app_name}')
-  print(f'Goal: {task.goal}')
-  print(f'Complexity: {task.complexity}')
-  print(f'Steps taken: {steps_taken}/{max_steps}')
-  print(f'Agent completed: {agent_completed}')
-  print(f'Task successful: {task_successful}')
-  print('=' * 80)
+  # Print summary if running all tasks
+  if run_all and len(results) > 1:
+    print()
+    print('#' * 80)
+    print('# SUMMARY')
+    print('#' * 80)
+    print()
+    
+    successful = sum(1 for r in results if r['success'])
+    total = len(results)
+    
+    print(f'App: {_get_app_display_name(app_name)}')
+    print(f'Total tasks: {total}')
+    print(f'Successful: {successful}')
+    print(f'Failed: {total - successful}')
+    print(f'Success rate: {successful/total*100:.1f}%')
+    print()
+    
+    print('Results by task:')
+    print('-' * 80)
+    for r in results:
+      status = '✅' if r['success'] else '❌'
+      error_msg = f" (Error: {r.get('error', '')})" if 'error' in r else ''
+      print(f"  {status} {r['task_name']}: score={r['score']:.2f}, steps={r['steps']}/{r['max_steps']}{error_msg}")
+    print('-' * 80)
 
   env.close()
 

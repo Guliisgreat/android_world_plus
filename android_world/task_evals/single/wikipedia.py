@@ -209,7 +209,7 @@ class WikipediaOpen(_WikipediaTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Open Wikipedia."
+  template = "Open the Wikipedia app."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -231,7 +231,7 @@ class WikipediaGoToSearchTab(_WikipediaTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Go to search tab in Wikipedia."
+  template = "In the Wikipedia app, go to the search tab."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -253,7 +253,7 @@ class WikipediaGoToSavedTab(_WikipediaTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Go to saved tab in Wikipedia."
+  template = "In the Wikipedia app, go to the saved tab."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     state = env.get_state()
@@ -275,7 +275,7 @@ class WikipediaIncreaseTextSize180(_WikipediaTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Increase the text size to 180% in Wikipedia."
+  template = "In the Wikipedia app, increase the text size to 180%."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     text_size = _get_text_size_multiplier(env)
@@ -297,7 +297,7 @@ class WikipediaDecreaseTextSize50(_WikipediaTaskEval):
       "properties": {},
       "required": [],
   }
-  template = "Decrease the text size to 50% in Wikipedia."
+  template = "In the Wikipedia app, decrease the text size to 50%."
 
   def is_successful(self, env: interface.AsyncEnv) -> float:
     text_size = _get_text_size_multiplier(env)
@@ -602,7 +602,7 @@ class WikipediaDisablePreviewAndFeed(_WikipediaTaskEval): # Should Work
       "required": [],
   }
   template = (
-      "Disable the 'show link previews', 'top read' feed settings, and return"
+      "In the Wikipedia app, disable the 'show link previews', 'top read' feed settings, and return"
       " to the feed on Wikipedia."
   )
 
