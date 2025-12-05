@@ -47,25 +47,42 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
 
 The AVD comes with pre-configured app snapshots that are required for task evaluation.
 
+### AVD Details
+
+| Property | Value |
+|----------|-------|
+| AVD Name | `AWAvd` |
+| Snapshot Name | `apps_ready_dec2025` |
+
 ### Start the Emulator
 
-Choose your own ports (examples below use CONSOLE_PORT=5554 and GRPC_PORT=8554):
-
 ```bash
-# Set your ports (adjust as needed)
+# Set your ports (adjust if needed)
 export CONSOLE_PORT=5554
 export GRPC_PORT=8554
 
-# Start the emulator with the provided AVD snapshot
-emulator -avd <AVD_NAME> -no-snapshot-save -grpc-port $GRPC_PORT -port $CONSOLE_PORT &
+# Start the emulator with the provided AVD and snapshot (READ-ONLY mode)
+emulator -avd AWAvd \
+  -no-window \
+  -no-audio \
+  -skip-adb-auth \
+  -no-boot-anim \
+  -gpu auto \
+  -grpc $GRPC_PORT \
+  -port $CONSOLE_PORT \
+  -snapshot apps_ready_dec2025 \
+  -no-snapshot-save &
 
 # Wait for the emulator to fully boot
 adb -s emulator-$CONSOLE_PORT wait-for-device
 ```
 
 **Key flags:**
-- `-no-snapshot-save`: Prevents saving changes to the snapshot (keeps it clean for next run)
-- `-grpc-port`: gRPC port for Android World communication
+- `-snapshot apps_ready_dec2025`: Loads the pre-configured snapshot with all 6 apps ready
+- `-no-snapshot-save`: **IMPORTANT** - Prevents saving changes to the snapshot (keeps it clean)
+- `-no-window`: Run headless (no GUI window)
+- `-no-audio`: Disable audio
+- `-grpc`: gRPC port for Android World communication
 - `-port`: Console port (ADB will use this port)
 
 ### Verify Emulator is Ready
