@@ -108,6 +108,11 @@ class BluecoinsTransaction(sqlite_schema_utils.SQLiteRow):
     return float(self.amount)
 
   @property
+  def amount_usd(self) -> float:
+    """Returns amount in USD (database stores in micro-units, divide by 1,000,000)."""
+    return abs(self.amount) / 1_000_000
+
+  @property
   def is_expense(self) -> bool:
     """Returns True if this is an expense."""
     return self.transactionTypeID == _TRANSACTION_TYPE_EXPENSE
@@ -337,9 +342,21 @@ class _BluecoinsQuery(_Bluecoins):
         # For larger numbers, check simple containment as fallback
         if expected_normalized in agent_answer.replace(',', ''):
           return 1.0
-    # For text answers, use fuzzy matching
-    elif fuzzy_match_lib.fuzzy_match(expected, agent_answer):
-      return 1.0
+    # For text answers, use multiple matching strategies
+    else:
+      # Strategy 1: Check if expected word is contained in answer (with word boundaries)
+      # This handles cases like agent says "Others" when expected is "other"
+      expected_pattern = r'\b' + re.escape(expected) + r's?\b'  # Allow optional 's' for plural
+      if re.search(expected_pattern, agent_answer, re.IGNORECASE):
+        return 1.0
+      
+      # Strategy 2: Check if expected is in the answer (simple containment)
+      if expected in agent_answer:
+        return 1.0
+      
+      # Strategy 3: Fuzzy matching as fallback
+      if fuzzy_match_lib.fuzzy_match(expected, agent_answer):
+        return 1.0
 
     logging.warning(
         'Agent answer "%s" does not match expected "%s"', agent_answer, expected
@@ -481,15 +498,16 @@ class BluecoinsAddExpense(_BluecoinsCreate):
   complexity = 1.5
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(self.params['amount'])
+    expected_amount = float(self.params['amount'])
     for t in new_transactions:
       # Check if amount matches and it's an expense
-      if abs(t.amount - expected_amount) <= 1 and t.is_expense:
-        logging.info('Found matching expense: %s', t)
+      # Use amount_usd which converts from micro-units to USD
+      if abs(t.amount_usd - expected_amount) <= 1 and t.is_expense:
+        logging.info('Found matching expense: %s (amount_usd=%s)', t, t.amount_usd)
         return 1.0
       # Also check without type restriction (amount only)
-      if abs(t.amount - expected_amount) <= 1:
-        logging.info('Found transaction with matching amount: %s', t)
+      if abs(t.amount_usd - expected_amount) <= 1:
+        logging.info('Found transaction with matching amount: %s (amount_usd=%s)', t, t.amount_usd)
         return 0.8
     logging.warning('No matching expense found for amount %s', expected_amount)
     return 0.0
@@ -506,10 +524,10 @@ class BluecoinsAddIncomeWithLabel(_BluecoinsCreate):
   complexity = 2
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(self.params['amount'])
+    expected_amount = float(self.params['amount'])
     expected_label = self.params['label'].lower()
     for t in new_transactions:
-      if abs(t.amount - expected_amount) <= 1:
+      if abs(t.amount_usd - expected_amount) <= 1:
         # Check label in notes (notes is the main field for labels)
         if expected_label in (t.notes or '').lower():
           logging.info('Found matching income with label: %s', t)
@@ -533,12 +551,12 @@ class BluecoinsAddExpenseOnDate(_BluecoinsCreate):
   complexity = 2.5
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(self.params['amount'])
+    expected_amount = float(self.params['amount'])
     for t in new_transactions:
-      if abs(t.amount - expected_amount) <= 1 and t.is_expense:
+      if abs(t.amount_usd - expected_amount) <= 1 and t.is_expense:
         logging.info('Found matching expense on date: %s', t)
         return 1.0
-      if abs(t.amount - expected_amount) <= 1:
+      if abs(t.amount_usd - expected_amount) <= 1:
         logging.info('Found matching amount (but may not be expense): %s', t)
         return 0.8
     return 0.0
@@ -556,10 +574,10 @@ class BluecoinsAddIncomeOnDateWithNote(_BluecoinsCreate):
   complexity = 3
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(float(self.params['amount']))  # Handle decimal input
+    expected_amount = float(self.params['amount'])  # Handle decimal input
     expected_note = self.params['note'].lower()
     for t in new_transactions:
-      if abs(t.amount - expected_amount) <= 1:
+      if abs(t.amount_usd - expected_amount) <= 1:
         if expected_note in (t.notes or '').lower():
           logging.info('Found matching income with note: %s', t)
           return 1.0
@@ -580,10 +598,10 @@ class BluecoinsAddExpenseOnDateWithLabel(_BluecoinsCreate):
   complexity = 3
 
   def _validate_new_transaction(self, new_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(self.params['amount'])
+    expected_amount = float(self.params['amount'])
     expected_label = self.params['label'].lower()
     for t in new_transactions:
-      if abs(t.amount - expected_amount) <= 1:
+      if abs(t.amount_usd - expected_amount) <= 1:
         if expected_label in (t.notes or '').lower():
           logging.info('Found matching expense with label: %s', t)
           return 1.0
@@ -639,9 +657,9 @@ class BluecoinsEditExpenseAmount(_BluecoinsEdit):
   complexity = 2.5
 
   def _validate_edit(self, after_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(self.params['new_amount'])
+    expected_amount = float(self.params['new_amount'])
     for t in after_transactions:
-      if abs(t.amount - expected_amount) <= 1 and t.is_expense:
+      if abs(t.amount_usd - expected_amount) <= 1 and t.is_expense:
         logging.info('Found transaction with updated amount: %s', t)
         return 1.0
     logging.warning('No transaction found with amount %s', expected_amount)
@@ -662,9 +680,9 @@ class BluecoinsEditIncomeDateAndAmount(_BluecoinsEdit):
   complexity = 3.5
 
   def _validate_edit(self, after_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(float(self.params['new_amount'].replace(',', '')))
+    expected_amount = float(self.params['new_amount'].replace(',', ''))
     for t in after_transactions:
-      if abs(t.amount - expected_amount) <= 1 and t.is_income:
+      if abs(t.amount_usd - expected_amount) <= 1 and t.is_income:
         logging.info('Found transaction with updated amount: %s', t)
         return 1.0
     return 0.0
@@ -672,7 +690,7 @@ class BluecoinsEditIncomeDateAndAmount(_BluecoinsEdit):
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
     return {
-        'old_date': _get_fixed_date(14),
+        'old_date': _get_fixed_date(13),  # Oct 13, 2023
         'new_date': _get_fixed_date(_FIXED_DAY),
         'new_amount': '18250'
     }
@@ -721,11 +739,11 @@ class BluecoinsEditTransactionTypeAmountNote(_BluecoinsEdit):
   complexity = 4
 
   def _validate_edit(self, after_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(self.params['new_amount'])
+    expected_amount = float(self.params['new_amount'])
     expected_note = self.params['new_note'].lower()
     expected_new_type = self.params['new_type'].lower()
     for t in after_transactions:
-      if abs(t.amount - expected_amount) <= 1:
+      if abs(t.amount_usd - expected_amount) <= 1:
         if expected_note in (t.notes or '').lower():
           # Verify type
           if expected_new_type == 'expense' and t.is_expense:
@@ -742,7 +760,7 @@ class BluecoinsEditTransactionTypeAmountNote(_BluecoinsEdit):
   @classmethod
   def generate_random_params(cls) -> dict[str, Any]:
     return {
-        'date': _get_fixed_date(_FIXED_DAY),
+        'date': _get_fixed_date(14),  # Oct 14, 2023 (where income exists)
         'old_type': 'income',
         'new_type': 'expense',
         'new_amount': 520,
@@ -760,10 +778,10 @@ class BluecoinsEditExpenseDateAmountNote(_BluecoinsEdit):
   complexity = 4
 
   def _validate_edit(self, after_transactions: list[BluecoinsTransaction]) -> float:
-    expected_amount = int(float(self.params['new_amount']))
+    expected_amount = float(self.params['new_amount'])
     expected_note = self.params['new_note'].lower()
     for t in after_transactions:
-      if abs(t.amount - expected_amount) <= 1 and t.is_expense:
+      if abs(t.amount_usd - expected_amount) <= 1 and t.is_expense:
         if expected_note in (t.notes or '').lower():
           logging.info('Found transaction with updated amount and note: %s', t)
           return 1.0
@@ -773,7 +791,7 @@ class BluecoinsEditExpenseDateAmountNote(_BluecoinsEdit):
   def generate_random_params(cls) -> dict[str, Any]:
     return {
         'old_date': _get_fixed_date(_FIXED_DAY),
-        'new_date': _get_fixed_date(16),  # Next day
+        'new_date': _get_fixed_date(14),  # Oct 14, 2023
         'new_amount': 936,
         'new_note': 'Grocery Shopping',
     }

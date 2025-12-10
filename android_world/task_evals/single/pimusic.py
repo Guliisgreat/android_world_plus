@@ -211,8 +211,13 @@ def _get_songs_count(env: interface.AsyncEnv) -> int:
     """Get total number of songs from local_music_store."""
     songs = _get_songs_from_local_store(env)
     if songs:
-        return len(songs)
-    return len(_DEFAULT_SONGS)  # Fallback to expected count
+        count = len(songs)
+        logging.info('Got song count from database: %d songs', count)
+        return count
+    # Fallback only if database query fails
+    fallback_count = len(_DEFAULT_SONGS)
+    logging.warning('Database query failed, using fallback count: %d', fallback_count)
+    return fallback_count
 
 
 def _get_sorted_song_names(env: interface.AsyncEnv) -> list[str]:
@@ -327,6 +332,164 @@ def _check_ui_for_text(env: interface.AsyncEnv, text: str) -> bool:
     return False
 
 
+def _check_ui_for_time_progress(env: interface.AsyncEnv) -> bool:
+    """Check if time progress indicator (e.g., '1:16', '0:30') is visible.
+    
+    This indicates the now-playing screen is showing playback progress.
+    """
+    import re
+    time_pattern = re.compile(r'^\d{1,2}:\d{2}$')  # Matches "1:16", "0:30", "12:45", etc.
+    try:
+        state = env.get_state(wait_to_stabilize=True)
+        for element in state.ui_elements:
+            element_text = (element.text or '').strip()
+            if time_pattern.match(element_text):
+                logging.info('Found time progress indicator: %s', element_text)
+                return True
+    except Exception as e:
+        logging.warning('Failed to check UI for time progress: %s', e)
+    return False
+
+
+# =============================================================================
+# SharedPreferences-based Playback State Functions
+# =============================================================================
+_PREFS_PATH = f'/data/data/{_PACKAGE_NAME}/shared_prefs/{_PACKAGE_NAME}_preferences.xml'
+
+
+def _get_playback_state(env: interface.AsyncEnv) -> dict[str, Any]:
+    """Get current playback state from SharedPreferences.
+    
+    Returns dict with:
+        - 'state': 'STATE_STARTED' (playing), 'STATE_PAUSED', etc.
+        - 'curr_pos': int, current position in nowPlayingList
+        - 'now_playing_list': list of song IDs (as strings)
+        - 'current_song_id': str, the current song ID or None
+    """
+    result = {
+        'state': None,
+        'curr_pos': None,
+        'now_playing_list': [],
+        'current_song_id': None,
+    }
+    
+    try:
+        # Read SharedPreferences XML
+        response = adb_utils.issue_generic_request(
+            ['shell', 'su', '0', 'cat', _PREFS_PATH],
+            env.controller,
+        )
+        if not response or not response.generic.output:
+            logging.warning('Failed to read Pi Music SharedPreferences')
+            return result
+        
+        prefs_content = response.generic.output.decode('utf-8', errors='ignore')
+        
+        # Parse last_media_player_state
+        state_match = re.search(r'name="last_media_player_state">([^<]+)<', prefs_content)
+        if state_match:
+            result['state'] = state_match.group(1)
+        
+        # Parse currPlayPos
+        pos_match = re.search(r'name="currPlayPos" value="(\d+)"', prefs_content)
+        if pos_match:
+            result['curr_pos'] = int(pos_match.group(1))
+        
+        # Parse nowPlayingList (separator is ‚‗‚)
+        list_match = re.search(r'name="nowPlayingList">([^<]+)<', prefs_content)
+        if list_match:
+            raw_list = list_match.group(1)
+            # Split by the special separator ‚‗‚
+            result['now_playing_list'] = raw_list.split('‚‗‚')
+        
+        # Get current song ID
+        if result['curr_pos'] is not None and result['now_playing_list']:
+            if 0 <= result['curr_pos'] < len(result['now_playing_list']):
+                result['current_song_id'] = result['now_playing_list'][result['curr_pos']]
+        
+        logging.info('Playback state: state=%s, pos=%s, current_song_id=%s',
+                     result['state'], result['curr_pos'], result['current_song_id'])
+        
+    except Exception as e:
+        logging.warning('Failed to get playback state: %s', e)
+    
+    return result
+
+
+def _get_song_info_from_mediastore(env: interface.AsyncEnv, song_id: str) -> dict[str, str]:
+    """Query MediaStore to get song title and artist by ID.
+    
+    Returns dict with 'title' and 'artist', or empty strings if not found.
+    """
+    result = {'title': '', 'artist': ''}
+    
+    try:
+        # content query --uri content://media/external/audio/media/<id> --projection title:artist
+        response = adb_utils.issue_generic_request(
+            ['shell', 'content', 'query', '--uri',
+             f'content://media/external/audio/media/{song_id}',
+             '--projection', 'title:artist'],
+            env.controller,
+        )
+        
+        if not response or not response.generic.output:
+            return result
+        
+        output = response.generic.output.decode('utf-8', errors='ignore')
+        
+        if 'Row:' in output:
+            # Parse: Row: 0 title=Lightship, artist=Sonny Boy
+            title_match = re.search(r'title=([^,]+)', output)
+            artist_match = re.search(r'artist=([^,\n]+)', output)
+            
+            if title_match:
+                result['title'] = title_match.group(1).strip()
+            if artist_match:
+                result['artist'] = artist_match.group(1).strip()
+            
+            logging.info('MediaStore song %s: title="%s", artist="%s"',
+                         song_id, result['title'], result['artist'])
+    
+    except Exception as e:
+        logging.warning('Failed to query MediaStore for song %s: %s', song_id, e)
+    
+    return result
+
+
+def _get_currently_playing_song(env: interface.AsyncEnv) -> dict[str, Any]:
+    """Get the currently playing song info.
+    
+    Returns dict with:
+        - 'is_playing': bool, True if STATE_STARTED
+        - 'title': str, song title
+        - 'artist': str, artist name
+        - 'song_id': str, MediaStore song ID
+    """
+    result = {
+        'is_playing': False,
+        'title': '',
+        'artist': '',
+        'song_id': None,
+    }
+    
+    # Step 1: Get playback state from SharedPreferences
+    playback_state = _get_playback_state(env)
+    
+    result['is_playing'] = (playback_state['state'] == 'STATE_STARTED')
+    result['song_id'] = playback_state['current_song_id']
+    
+    # Step 2: If we have a song ID, query MediaStore for title/artist
+    if result['song_id']:
+        song_info = _get_song_info_from_mediastore(env, result['song_id'])
+        result['title'] = song_info['title']
+        result['artist'] = song_info['artist']
+    
+    logging.info('Currently playing: is_playing=%s, title="%s", artist="%s"',
+                 result['is_playing'], result['title'], result['artist'])
+    
+    return result
+
+
 def _check_app_in_foreground(env: interface.AsyncEnv) -> bool:
     """Check if Pi Music Player is in the foreground."""
     activity = _get_current_activity(env)
@@ -411,10 +574,50 @@ class _PiMusicQuery(_PiMusicBase, metaclass=abc.ABCMeta):
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         super().is_successful(env)
-        expected = self._get_expected_answer(env)
-        response = getattr(env, 'interaction_cache', '')
-        if fuzzy_match_lib.fuzzy_match(response, expected):
+        expected = self._get_expected_answer(env).lower()
+        response = getattr(env, 'interaction_cache', '') or ''
+        response = response.lower()
+
+        if not response:
+            logging.warning('Agent did not provide an answer.')
+            return 0.0
+
+        # Strategy 1: Check if expected is contained in response (handles "You have 14 songs")
+        if expected in response:
+            logging.info('Found expected "%s" in response "%s"', expected, response)
             return 1.0
+        
+        # Strategy 2: For numeric answers, check with word boundaries
+        if expected.isdigit():
+            pattern = r'\b' + re.escape(expected) + r'\b'
+            if re.search(pattern, response):
+                logging.info('Found numeric expected "%s" in response "%s"', expected, response)
+                return 1.0
+        
+        # Strategy 3: For duration formats like "13:30", also accept text formats
+        # Handles: "13 minutes 30 seconds", "13 min 30 sec", "13m 30s", etc.
+        duration_match = re.match(r'^(\d+):(\d+)$', expected)
+        if duration_match:
+            minutes = duration_match.group(1)
+            seconds = duration_match.group(2).lstrip('0') or '0'  # Remove leading zero
+            
+            # Check various text formats
+            duration_patterns = [
+                rf'\b{minutes}\s*(?:minutes?|mins?|m)\b.*\b{seconds}\s*(?:seconds?|secs?|s)\b',
+                rf'\b{minutes}\s*(?:minutes?|mins?|m)\s+(?:and\s+)?{seconds}\s*(?:seconds?|secs?|s)\b',
+                rf'\b{minutes}:{seconds.zfill(2)}\b',  # Also check with leading zero
+            ]
+            for pattern in duration_patterns:
+                if re.search(pattern, response, re.IGNORECASE):
+                    logging.info('Found duration "%s" in text format in response "%s"', expected, response)
+                    return 1.0
+        
+        # Strategy 4: Fuzzy match as fallback
+        if fuzzy_match_lib.fuzzy_match(response, expected):
+            logging.info('Fuzzy match success for expected "%s" and response "%s"', expected, response)
+            return 1.0
+        
+        logging.warning('Agent answer "%s" does not match expected "%s"', response, expected)
         return 0.0
 
 
@@ -465,8 +668,9 @@ class PiMusicQueryTotalSongs(_PiMusicQuery):
     template = 'In the Pi Music Player app, tell me how many songs do I have in total?'
 
     def _get_expected_answer(self, env: interface.AsyncEnv) -> str:
-        # Query local_music_store table for count
+        # Query local_music_store table for actual count (not hardcoded)
         count = _get_songs_count(env)
+        logging.info('PiMusicQueryTotalSongs: Expected answer from DB = %d', count)
         return str(count)
 
     @classmethod
@@ -609,18 +813,24 @@ class PiMusicQuerySortedSongsByTitle(_PiMusicQuery):
 
     def is_successful(self, env: interface.AsyncEnv) -> float:
         super().is_successful(env)
-        response = getattr(env, 'interaction_cache', '') or ''
+        response = (getattr(env, 'interaction_cache', '') or '').lower()
         
         # Get sorted song names from SQLite
         sorted_songs = _get_sorted_song_names(env)
-        second = sorted_songs[1] if len(sorted_songs) > 1 else ''
-        fourth = sorted_songs[3] if len(sorted_songs) > 3 else ''
+        second = (sorted_songs[1] if len(sorted_songs) > 1 else '').lower()
+        fourth = (sorted_songs[3] if len(sorted_songs) > 3 else '').lower()
         
-        second_match = fuzzy_match_lib.fuzzy_match(response, second)
-        fourth_match = fuzzy_match_lib.fuzzy_match(response, fourth)
+        # Check if song names are contained in the response
+        second_match = second and second in response
+        fourth_match = fourth and fourth in response
+        
+        logging.info('Checking sorted songs: second="%s", fourth="%s" in response', second, fourth)
+        
         if second_match and fourth_match:
+            logging.info('Both songs found in response.')
             return 1.0
         elif second_match or fourth_match:
+            logging.info('Only one song found: second=%s, fourth=%s', second_match, fourth_match)
             return 0.5
         return 0.0
 
@@ -681,7 +891,7 @@ class PiMusicQueryArtistTotalDuration(_PiMusicQuery):
 class PiMusicPlayFromPlaylist(_PiMusicOperation):
     """Task to play the first song in a specific playlist.
     
-    Validation: UI-based (check for pause button or now-playing display)
+    Validation: SharedPreferences (check last_media_player_state == STATE_STARTED)
     """
 
     app_names = (_APP_NAME,)
@@ -701,14 +911,27 @@ class PiMusicPlayFromPlaylist(_PiMusicOperation):
         return f"In the Pi Music Player app, play the first song in '{self.params['playlist_name']}' playlist."
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
-        """UI-based validation: check for playback indicators."""
-        # Check for pause button (indicates playing state)
+        """SharedPreferences validation: check if music is playing."""
+        # Get playback state from SharedPreferences
+        playback_state = _get_playback_state(env)
+        
+        if playback_state['state'] == 'STATE_STARTED':
+            logging.info('Music is playing (STATE_STARTED).')
+            return 1.0
+        elif playback_state['state'] == 'STATE_PAUSED':
+            # Song loaded but paused - partial success
+            logging.info('Music is paused (STATE_PAUSED).')
+            return 0.8
+        elif playback_state['current_song_id']:
+            # Song is in queue but state unclear
+            logging.info('Song loaded but playback state unclear: %s', playback_state['state'])
+            return 0.7
+        
+        # Fallback to UI check
         if _check_ui_for_text(env, 'pause'):
             return 1.0
-        # Check for now-playing UI elements
         if _check_ui_for_text(env, 'playing') or _check_ui_for_text(env, 'now playing'):
             return 1.0
-        # Check activity name
         activity = _get_current_activity(env)
         if 'player' in activity.lower() or 'playing' in activity.lower():
             return 0.8
@@ -798,49 +1021,81 @@ class PiMusicCreatePlaylist(_PiMusicOperation):
 
 
 class PiMusicPauseAndSeek(_PiMusicOperation):
-    """Task to pause and seek to a specific time.
+    """Task to play a specific song, then pause and seek to a specific time.
     
-    Validation: UI-based (check for play button and seek position)
+    Validation: SharedPreferences (STATE_PAUSED + playerPosition) with UI fallback
+    
+    The task explicitly asks the agent to play a specific song first, ensuring
+    there's something to pause and seek.
     """
 
     app_names = (_APP_NAME,)
-    complexity = 2
+    complexity = 2.5  # Increased: play + pause + seek
     schema = {
         'type': 'object',
         'properties': {
+            'song_title': {'type': 'string'},
             'seek_minutes': {'type': 'integer'},
             'seek_seconds': {'type': 'integer'},
         },
-        'required': ['seek_minutes', 'seek_seconds'],
+        'required': ['song_title', 'seek_minutes', 'seek_seconds'],
     }
-    template = 'In the Pi Music Player app, pause the currently playing song and seek to {seek_minutes} minute and {seek_seconds} seconds.'
+    template = "In the Pi Music Player app, play '{song_title}', then pause it and seek to {seek_minutes} minute and {seek_seconds} seconds."
 
     @property
     def goal(self) -> str:
-        return f'In the Pi Music Player app, pause the currently playing song and seek to {self.params["seek_minutes"]} minute and {self.params["seek_seconds"]} seconds.'
+        return f"In the Pi Music Player app, play '{self.params['song_title']}', then pause it and seek to {self.params['seek_minutes']} minute and {self.params['seek_seconds']} seconds."
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
-        """UI-based validation: check for paused state and seek position."""
-        # Check if paused (play button visible = paused state)
+        """SharedPreferences + UI validation: check for paused state and seek position."""
+        expected_seek_ms = (self.params['seek_minutes'] * 60 + self.params['seek_seconds']) * 1000
+        seek_time = f'{self.params["seek_minutes"]}:{self.params["seek_seconds"]:02d}'
+        
+        # Method 1: Check SharedPreferences for paused state
+        playback_state = _get_playback_state(env)
+        is_paused = playback_state['state'] == 'STATE_PAUSED'
+        
+        if is_paused:
+            logging.info('Song is paused (STATE_PAUSED confirmed).')
+            # Check seek position in UI (SharedPreferences playerPosition might have slight offset)
+            if _check_ui_for_text(env, seek_time):
+                logging.info('Seek position %s confirmed in UI.', seek_time)
+                return 1.0
+            # Paused but seek position not visible - still partial success
+            logging.info('Paused but seek position %s not visible in UI.', seek_time)
+            return 0.7
+        
+        # Method 2: Fallback to UI-based check
         if _check_ui_for_text(env, 'play'):
-            # Check if seek position matches expected time
-            seek_time = f'{self.params["seek_minutes"]}:{self.params["seek_seconds"]:02d}'
+            logging.info('Play button visible (indicates paused state).')
             if _check_ui_for_text(env, seek_time):
                 logging.info('Found paused state with seek position %s.', seek_time)
                 return 1.0
             logging.info('Found paused state but seek position not visible.')
             return 0.5
+        
         return 0.0
 
     @classmethod
     def generate_random_params(cls) -> dict[str, Any]:
-        return {'seek_minutes': 1, 'seek_seconds': 27}
+        # Use a long song to ensure seek time is valid
+        # "Shine On You Crazy Diamond" is 13:30 (810 seconds) - the longest
+        # Seek time: 1:27 (87 seconds) - safe for any song
+        return {
+            'song_title': 'Shine On You Crazy Diamond',
+            'seek_minutes': 1,
+            'seek_seconds': 27,
+        }
 
 
 class PiMusicPlaySongByTitleArtist(_PiMusicOperation):
     """Task to play a specific song by title and artist.
     
-    Validation: UI-based (check for song title in now-playing and playback state)
+    Validation: SharedPreferences + MediaStore
+    - Reads last_media_player_state, currPlayPos, nowPlayingList from SharedPreferences
+    - Gets current song ID from nowPlayingList[currPlayPos]
+    - Queries MediaStore for song title and artist
+    - Verifies match with expected song
     """
 
     app_names = (_APP_NAME,)
@@ -856,17 +1111,59 @@ class PiMusicPlaySongByTitleArtist(_PiMusicOperation):
     template = 'In the Pi Music Player app, play {song_title} by {artist}.'
 
     def _verify_operation(self, env: interface.AsyncEnv) -> float:
-        """UI-based validation: check for song title in now-playing area."""
-        song_title = self.params['song_title']
-        # Check if correct song title is displayed
-        if _check_ui_for_text(env, song_title):
-            # Check for playback indicator
-            if _check_ui_for_text(env, 'pause'):
-                logging.info('Song "%s" is playing (pause button visible).', song_title)
+        """SharedPreferences + MediaStore validation for playback.
+        
+        Process:
+        1. Read SharedPreferences: last_media_player_state, currPlayPos, nowPlayingList
+        2. Get current song ID: nowPlayingList[currPlayPos]
+        3. Query MediaStore: content://media/external/audio/media/<song_id>
+        4. Compare title and artist with expected values
+        """
+        expected_title = self.params['song_title']
+        expected_artist = self.params['artist']
+        
+        # Get currently playing song from SharedPreferences + MediaStore
+        current_song = _get_currently_playing_song(env)
+        
+        actual_title = current_song['title']
+        actual_artist = current_song['artist']
+        is_playing = current_song['is_playing']
+        
+        logging.info('Validating: expected="%s" by "%s", actual="%s" by "%s", playing=%s',
+                     expected_title, expected_artist, actual_title, actual_artist, is_playing)
+        
+        # Check if title and artist match (case-insensitive)
+        title_match = expected_title.lower() == actual_title.lower()
+        artist_match = expected_artist.lower() == actual_artist.lower()
+        
+        if title_match and artist_match:
+            if is_playing:
+                # Perfect: correct song is currently playing
+                logging.info('SUCCESS: "%s" by "%s" is playing (STATE_STARTED).', actual_title, actual_artist)
                 return 1.0
-            logging.info('Song "%s" visible but playback state unclear.', song_title)
+            else:
+                # Correct song but paused/stopped - still success as task is to "play" the song
+                logging.info('SUCCESS: "%s" by "%s" is loaded (state=%s).', 
+                             actual_title, actual_artist, current_song.get('state', 'unknown'))
+                return 1.0
+        elif title_match:
+            # Title matches but artist doesn't
+            logging.info('PARTIAL: Title "%s" matches but artist "%s" != "%s".',
+                         actual_title, actual_artist, expected_artist)
             return 0.7
-        return 0.0
+        elif actual_title:
+            # Different song is playing
+            logging.info('FAIL: Wrong song playing: "%s" by "%s" instead of "%s" by "%s".',
+                         actual_title, actual_artist, expected_title, expected_artist)
+            return 0.0
+        else:
+            # Could not determine current song - fall back to UI check
+            logging.info('Could not determine current song from SharedPreferences, falling back to UI.')
+            if _check_ui_for_text(env, expected_title) and _check_ui_for_text(env, expected_artist):
+                return 1.0
+            elif _check_ui_for_text(env, expected_title):
+                return 0.7
+            return 0.0
 
     @classmethod
     def generate_random_params(cls) -> dict[str, Any]:

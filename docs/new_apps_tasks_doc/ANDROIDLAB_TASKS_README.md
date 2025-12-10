@@ -100,8 +100,11 @@ The `--run_all` flag runs all tasks sequentially and provides a summary at the e
 
 ## Data Setup
 
-### Bluecoins (October 15, 2023)
-4 expenses: 512, 888, 256, 768 USD (category: Other, no notes)
+### Bluecoins (October 2023)
+- **Oct 15**: 4 expenses: 512, 888, 256, 768 USD (category: Other)
+- **Oct 13**: 1 income: 15,000 USD (for edit tasks)
+- **Oct 14**: 1 income: 5,000 USD (for edit tasks)
+- **Dec 9**: 1 income: 5,000 USD (for edit tasks)
 
 ### Pi Music Player
 - 10 songs (6 Pink Floyd, 3 Eason Chan, 1 Sonny Boy)

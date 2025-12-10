@@ -12,24 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test BMOCA app tasks (Calculator, Snapseed, Wikipedia) with M3A agent.
+"""Test BMOCA app tasks (Calculator, Snapseed, Wikipedia) with M3A or T3A agent.
 
 This script can test individual tasks or all tasks from Calculator, Snapseed,
-or Wikipedia apps using the m3a GPT-4 agent. Useful for testing and debugging
-BMOCA tasks.
+or Wikipedia apps using M3A (multimodal) or T3A (text-only) agents with GPT-4o.
+Useful for testing and debugging BMOCA tasks.
 
 Usage:
     # List available tasks for an app
     python scripts/test_all_bmoca_tasks.py --app calculator
     
-    # Run a specific task
+    # Run a specific task with M3A (default)
     python scripts/test_all_bmoca_tasks.py --app calculator --task CalculatorInput1Plus1
+    
+    # Run a specific task with T3A (text-only, cheaper)
+    python scripts/test_all_bmoca_tasks.py --app calculator --task CalculatorInput1Plus1 --agent t3a
     
     # Run ALL tasks for an app
     python scripts/test_all_bmoca_tasks.py --app calculator --run_all
+    
+    # Run ALL tasks with T3A agent
+    python scripts/test_all_bmoca_tasks.py --app calculator --run_all --agent t3a
+    
+    # Run ALL tasks and save report to JSON file
+    python scripts/test_all_bmoca_tasks.py --app calculator --run_all --report results/calculator_m3a.json
 """
 
 from collections.abc import Sequence
+from datetime import datetime
+import json
 import os
 import sys
 from typing import Type
@@ -99,6 +110,7 @@ from android_world import episode_runner
 from android_world import registry
 from android_world.agents import infer
 from android_world.agents import m3a
+from android_world.agents import t3a
 from android_world.env import env_launcher
 from android_world.task_evals import task_eval
 
@@ -218,6 +230,43 @@ _GRPC_PORT = flags.DEFINE_integer(
     'The gRPC port for communication with the emulator.',
 )
 
+_AGENT = flags.DEFINE_enum(
+    'agent',
+    'm3a',
+    ['m3a', 't3a'],
+    'The agent to use: m3a (multimodal with screenshots) or t3a (text-only).',
+)
+
+_REPORT = flags.DEFINE_string(
+    'report',
+    None,
+    'Path to save JSON report of results. If not specified, no report is saved.',
+)
+
+
+def _save_report(results: list[dict], app_name: str, agent_type: str, report_path: str) -> None:
+  """Save results to a JSON report file."""
+  report = {
+      'timestamp': datetime.now().isoformat(),
+      'app': app_name,
+      'agent': agent_type,
+      'total_tasks': len(results),
+      'successful': sum(1 for r in results if r['success']),
+      'failed': sum(1 for r in results if not r['success']),
+      'success_rate': sum(1 for r in results if r['success']) / len(results) * 100 if results else 0,
+      'results': results,
+  }
+  
+  # Ensure directory exists
+  report_dir = os.path.dirname(report_path)
+  if report_dir:
+    os.makedirs(report_dir, exist_ok=True)
+  
+  with open(report_path, 'w') as f:
+    json.dump(report, f, indent=2)
+  
+  print(f'\n📄 Report saved to: {report_path}')
+
 
 def _get_available_tasks(app_name: str) -> list[str]:
   """Get available tasks for the specified app."""
@@ -259,10 +308,15 @@ def _run_single_task(task_name: str, app_name: str, env, aw_registry) -> dict:
   task.initialize_task(env)
   print('✓ Task loaded\n')
   
-  # Initialize M3A agent with GPT-4
-  print('Initializing M3A agent with GPT-4o...')
-  agent = m3a.M3A(env, infer.Gpt4Wrapper('gpt-4o'))
-  agent.name = 'm3a_gpt4v'
+  # Initialize agent with GPT-4o
+  agent_type = _AGENT.value.upper()
+  print(f'Initializing {agent_type} agent with GPT-4o...')
+  if _AGENT.value == 'm3a':
+    agent = m3a.M3A(env, infer.Gpt4Wrapper('gpt-4o'))
+    agent.name = 'm3a_gpt4o'
+  else:
+    agent = t3a.T3A(env, infer.Gpt4Wrapper('gpt-4o'))
+    agent.name = 't3a_gpt4o'
   agent.reset(go_home_on_reset=task.start_on_home_screen)
   print('✓ Agent initialized\n')
   
@@ -398,6 +452,7 @@ def _main() -> None:
   else:
     print(f'Testing BMOCA Task: {task_name}')
   print(f'App: {_get_app_display_name(app_name)}')
+  print(f'Agent: {_AGENT.value.upper()} ({"multimodal" if _AGENT.value == "m3a" else "text-only"})')
   print(f'Console Port: {_DEVICE_CONSOLE_PORT.value}')
   print(f'gRPC Port: {_GRPC_PORT.value}')
   print('=' * 80)
@@ -476,6 +531,10 @@ def _main() -> None:
       error_msg = f" (Error: {r.get('error', '')})" if 'error' in r else ''
       print(f"  {status} {r['task_name']}: score={r['score']:.2f}, steps={r['steps']}/{r['max_steps']}{error_msg}")
     print('-' * 80)
+
+  # Save report if requested
+  if _REPORT.value and results:
+    _save_report(results, app_name, _AGENT.value, _REPORT.value)
 
   env.close()
 

@@ -410,14 +410,14 @@ class BluecoinsEditIncomeDateAndAmountTest(absltest.TestCase):
 
   def test_goal_format(self):
     params = {
-        'old_date': 'October 14, 2023',
+        'old_date': 'October 13, 2023',
         'new_date': 'October 15, 2023',
         'new_amount': '18250',
     }
     task = bluecoins.BluecoinsEditIncomeDateAndAmount(params)
     self.assertEqual(
         task.goal,
-        'In the Bluecoins app, shift the income entry from October 14, 2023 to October 15, 2023, '
+        'In the Bluecoins app, shift the income entry from October 13, 2023 to October 15, 2023, '
         'and update the amount to 18250 USD.',
     )
 
@@ -460,7 +460,7 @@ class BluecoinsEditTransactionTypeAmountNoteTest(absltest.TestCase):
 
   def test_goal_format(self):
     params = {
-        'date': 'October 15, 2023',
+        'date': 'October 14, 2023',
         'old_type': 'income',
         'new_type': 'expense',
         'new_amount': 520,
@@ -469,7 +469,7 @@ class BluecoinsEditTransactionTypeAmountNoteTest(absltest.TestCase):
     task = bluecoins.BluecoinsEditTransactionTypeAmountNote(params)
     self.assertEqual(
         task.goal,
-        "In the Bluecoins app, change the type of the transaction on October 15, 2023 from 'income' to "
+        "In the Bluecoins app, change the type of the transaction on October 14, 2023 from 'income' to "
         "'expense', adjust the amount to 520 USD, and change the "
         "note to 'Wrong Operation'.",
     )
@@ -488,14 +488,14 @@ class BluecoinsEditExpenseDateAmountNoteTest(absltest.TestCase):
   def test_goal_format(self):
     params = {
         'old_date': 'October 15, 2023',
-        'new_date': 'October 16, 2023',
+        'new_date': 'October 14, 2023',
         'new_amount': 936,
         'new_note': 'Grocery Shopping',
     }
     task = bluecoins.BluecoinsEditExpenseDateAmountNote(params)
     self.assertEqual(
         task.goal,
-        'In the Bluecoins app, move the expense entry from October 15, 2023 to October 16, 2023, adjust the '
+        'In the Bluecoins app, move the expense entry from October 15, 2023 to October 14, 2023, adjust the '
         "amount to 936 USD, and update the note to 'Grocery Shopping'.",
     )
 

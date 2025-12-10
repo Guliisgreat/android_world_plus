@@ -84,8 +84,8 @@ The Pi Music Player app tasks test music player operations including song querie
 - **Complexity**: 2.0
 - **Description**: Play the first song in a specific playlist
 - **Goal**: "In the Pi Music Player app, play the first song in '{playlist_name}' playlist."
-- **Success Criteria**: Pause button visible or "playing"/"now playing" text in UI
-- **Validation**: UI-based
+- **Success Criteria**: `last_media_player_state == "STATE_STARTED"` in SharedPreferences
+- **Validation**: SharedPreferences (with UI fallback)
 
 #### PiMusicSortByDurationDescending
 - **Complexity**: 2.0
@@ -102,18 +102,20 @@ The Pi Music Player app tasks test music player operations including song querie
 - **Validation**: Pi Music SQLite
 
 #### PiMusicPauseAndSeek
-- **Complexity**: 2.0
-- **Description**: Pause and seek to specific time
-- **Goal**: "In the Pi Music Player app, pause the currently playing song and seek to {seek_minutes} minute and {seek_seconds} seconds."
-- **Success Criteria**: Play button visible + seek time visible in UI
-- **Validation**: UI-based
+- **Complexity**: 2.5
+- **Description**: Play a specific song, pause it, and seek to a specific time
+- **Goal**: "In the Pi Music Player app, play '{song_title}', then pause it and seek to {seek_minutes} minute and {seek_seconds} seconds."
+- **Default Song**: "Shine On You Crazy Diamond" (13:30) - ensures seek time is valid
+- **Default Seek**: 1:27
+- **Success Criteria**: `last_media_player_state == "STATE_PAUSED"` + seek time visible in UI
+- **Validation**: SharedPreferences + UI (with UI fallback)
 
 #### PiMusicPlaySongByTitleArtist
 - **Complexity**: 2.0
 - **Description**: Play a specific song by title and artist
 - **Goal**: "In the Pi Music Player app, play {song_title} by {artist}."
-- **Success Criteria**: Song title visible + pause button visible
-- **Validation**: UI-based
+- **Success Criteria**: Correct song playing (verified via SharedPreferences + MediaStore)
+- **Validation**: SharedPreferences + MediaStore (see validation process below)
 
 #### PiMusicSortByDurationAscending
 - **Complexity**: 2.0
@@ -140,15 +142,26 @@ python scripts/test_androidlab_apps.py --app pimusic --task PiMusicCreatePlaylis
 
 - **Database Path**: `/data/data/com.Project100Pi.themusicplayer/databases/songinfodatabase`
 - **MediaStore URI**: `content://media/external/audio/media`
+- **SharedPreferences Path**: `/data/data/com.Project100Pi.themusicplayer/shared_prefs/com.Project100Pi.themusicplayer_preferences.xml`
 
 ### SQLite Tables
 
 | Table | Description |
 |-------|-------------|
 | `local_music_store` | Song metadata (_id, song_name, duration, file_size) |
-| `pi_song_info` | Extended info (is_favourite, play_count, album_name) |
+| `pi_song_info` | Extended info (is_favourite, play_count, album_name, lastplayed_timestamp) |
 | `pi_playlist` | Playlist metadata |
 | `playlist_song` | Songs in playlists |
+
+### SharedPreferences Fields (Playback State)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `last_media_player_state` | String | Playback state: `STATE_STARTED`, `STATE_PAUSED`, `STATE_STOPPED` |
+| `currPlayPos` | Integer | Current position in `nowPlayingList` (0-indexed) |
+| `nowPlayingList` | String | Song IDs separated by `‚‗‚` (special delimiter) |
+| `playerPosition` | Integer | Current playback position in milliseconds |
+| `is_player_stopped_by_user` | Boolean | Whether user manually stopped playback |
 
 ### Validation Methods
 
@@ -157,15 +170,83 @@ python scripts/test_androidlab_apps.py --app pimusic --task PiMusicCreatePlaylis
 | Query (song count, sorted) | Pi Music SQLite |
 | Query (artist, album, duration) | MediaStore |
 | Operation (create playlist) | Pi Music SQLite |
-| Operation (playback, sort) | UI-based |
+| Operation (play song) | SharedPreferences + MediaStore |
+| Operation (pause/seek) | SharedPreferences + UI |
+| Operation (sort) | UI-based |
+
+### Playback Validation Process
+
+For tasks like `PiMusicPlaySongByTitleArtist` and `PiMusicPlayFromPlaylist`, the validation uses SharedPreferences + MediaStore to reliably verify playback state:
+
+#### Step 1: Read SharedPreferences
+```
+Path: /data/data/com.Project100Pi.themusicplayer/shared_prefs/com.Project100Pi.themusicplayer_preferences.xml
+```
+
+Extract:
+| Field | Example | Meaning |
+|-------|---------|---------|
+| `last_media_player_state` | `STATE_STARTED` | `STATE_STARTED` = playing, `STATE_PAUSED` = paused |
+| `currPlayPos` | `4` | Current position in play queue (0-indexed) |
+| `nowPlayingList` | `1000000060‚‗‚1000000059‚‗‚...` | Song IDs separated by `‚‗‚` |
+
+#### Step 2: Get Current Song ID
+```
+current_song_id = nowPlayingList[currPlayPos]
+```
+
+#### Step 3: Query MediaStore
+```bash
+content query --uri content://media/external/audio/media/<song_id> --projection title:artist
+```
+
+Returns: `title=Lightship, artist=Sonny Boy`
+
+#### Step 4: Verify Match
+Compare actual title/artist with expected values.
+
+#### Validation Diagram
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ SharedPreferences XML                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ last_media_player_state = "STATE_STARTED"  ← Is it playing?    │
+│ currPlayPos = 4                             ← Queue position    │
+│ nowPlayingList = "...‚‗‚1000000063‚‗‚..."  ← Song IDs          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    nowPlayingList[4] = 1000000063
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ MediaStore Query                                                │
+│ content://media/external/audio/media/1000000063                │
+├─────────────────────────────────────────────────────────────────┤
+│ title = "Lightship"                                            │
+│ artist = "Sonny Boy"                                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+              Compare with expected: ✅ Match → Score 1.0
+```
 
 ### Helper Functions
 
+#### SQLite/MediaStore Functions
 - `_get_songs_count(env)`: Get total songs from `local_music_store`
 - `_get_sorted_song_names(env)`: Get alphabetically sorted song names
 - `_playlist_exists(env, name)`: Check if playlist exists in `pi_playlist`
 - `_query_mediastore(env)`: Query Android MediaStore for song metadata
+
+#### Playback State Functions
+- `_get_playback_state(env)`: Read SharedPreferences for `last_media_player_state`, `currPlayPos`, `nowPlayingList`
+- `_get_song_info_from_mediastore(env, song_id)`: Query MediaStore for title/artist by song ID
+- `_get_currently_playing_song(env)`: Combined function returning `is_playing`, `title`, `artist`, `song_id`
+
+#### UI Functions
 - `_check_ui_for_text(env, text)`: Check if text appears in current UI
+- `_get_current_activity(env)`: Get current foreground activity name
 
 ## Notes
 

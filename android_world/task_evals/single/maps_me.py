@@ -135,14 +135,13 @@ _LOCATIONS = [
 
 _PLACE_TYPES = [
     'restaurant',
-    'hotel',
     'cafe',
     'gas station',
     'pharmacy',
     'supermarket',
     'hospital',
     'bank',
-]
+]  # Note: 'hotel' removed - use MapsMeCheckNearestHotel for hotel queries
 
 _TRANSPORT_MODES = ['walking', 'driving', 'riding', 'public transportation']
 
