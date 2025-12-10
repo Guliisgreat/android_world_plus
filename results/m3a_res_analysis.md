@@ -25,10 +25,11 @@
 | **Total Tasks** | 77 |
 | **Total Successful** | 6 |
 | **Overall SR** | 7.8% |
-| **Average Per-App SR** | 10.4% |
-| **SR Std Dev** | 14.8% |
-| **SR Variance** | 219.6 |
+| **Weighted SR Variance** | 113.4 |
+| **Weighted SR Std Dev** | 10.7 pp |
 | **Average Steps/Task** | 12.7 |
+
+*Note: Weighted variance uses task counts as weights (apps with more tasks contribute more). Units are percentage points (pp).*
 
 ## By App Category
 
