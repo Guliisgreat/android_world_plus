@@ -2,7 +2,7 @@
 
 ## Overview
 
-- **Agent**: T3A (Text-only) with GPT-4o
+- **Agent**: T3A with GPT-4o
 - **Total Apps**: 6 (3 AndroidLab + 3 BMOCA)
 - **Total Tasks**: 77
 - **Date**: December 2025

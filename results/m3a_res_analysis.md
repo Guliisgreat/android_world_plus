@@ -1,0 +1,47 @@
+# M3A Agent Performance Summary (All 6 Apps)
+
+## Overview
+
+- **Agent**: M3A (Multimodal) with GPT-4o
+- **Total Apps**: 6 (3 AndroidLab + 3 BMOCA)
+- **Total Tasks**: 77
+- **Date**: December 2025
+
+## Per-App Results
+
+| App | Tasks | Successful | SR (%) | Avg Steps | Max Steps (avg) |
+|-----|-------|------------|--------|-----------|-----------------|
+| **Bluecoins** | 15 | 1 | 6.7% | 18.4 | 27.0 |
+| **Maps.me** | 15 | 0 | 0.0% | 10.4 | 23.3 |
+| **Pi Music** | 12 | 0 | 0.0% | 5.4 | 17.1 |
+| **Calculator** | 19 | 3 | 15.8% | 17.8 | 19.7 |
+| **Snapseed** | 11 | 0 | 0.0% | 8.6 | 20.9 |
+| **Wikipedia** | 5 | 2 | 40.0% | 20.0 | 22.0 |
+
+## Aggregate Statistics
+
+| Metric | Value |
+|--------|-------|
+| **Total Tasks** | 77 |
+| **Total Successful** | 6 |
+| **Overall SR** | 7.8% |
+| **Average Per-App SR** | 10.4% |
+| **SR Std Dev** | 14.8% |
+| **SR Variance** | 219.6 |
+| **Average Steps/Task** | 12.7 |
+
+## By App Category
+
+| Category | Apps | Tasks | SR (%) | Avg Steps |
+|----------|------|-------|--------|-----------|
+| **AndroidLab** | Bluecoins, Maps.me, Pi Music | 42 | 2.4% | 11.8 |
+| **BMOCA** | Calculator, Snapseed, Wikipedia | 35 | 14.3% | 15.3 |
+
+## Key Insights
+
+1. **Best performing**: Wikipedia (40% SR) - simple navigation tasks
+2. **Worst performing**: Maps.me, Pi Music, Snapseed (0% SR each)
+3. **Most efficient**: Pi Music (5.4 avg steps) - but all failed
+4. **Most steps needed**: Wikipedia (20.0 avg steps) - complex settings tasks
+
+

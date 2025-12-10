@@ -1,0 +1,326 @@
+{
+  "timestamp": "2025-12-10T18:35:29.006638",
+  "app": "all",
+  "agent": "m3a",
+  "total_tasks": 35,
+  "successful": 3,
+  "failed": 32,
+  "success_rate": 8.571428571428571,
+  "results": [
+    {
+      "task_name": "CalculatorOpen",
+      "goal": "Open the Calculator app.",
+      "score": 1.0,
+      "completed": true,
+      "steps": 2,
+      "max_steps": 10,
+      "success": true
+    },
+    {
+      "task_name": "CalculatorInput1",
+      "goal": "In the Calculator app, input 1.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInput1Plus1",
+      "goal": "In the Calculator app, input '1+1'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInput3Times5",
+      "goal": "In the Calculator app, input '3\u00d75'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInput2Plus24Div3",
+      "goal": "In the Calculator app, input '2+24\u00f73'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInput17Times23",
+      "goal": "In the Calculator app, input '17\u00d723'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInputCos60",
+      "goal": "In the Calculator app, input 'cos(60)'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInputCos180",
+      "goal": "In the Calculator app, input 'cos(180)'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInputFactorial6",
+      "goal": "In the Calculator app, input factorial of 6.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInputSqrt25",
+      "goal": "In the Calculator app, input square root of 25.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInputLn1234",
+      "goal": "In the Calculator app, input 'ln(1234)'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInput5Choose2",
+      "goal": "In the Calculator app, input '5!\u00f7(2!x3!)'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 25,
+      "max_steps": 25,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInput10Choose2",
+      "goal": "In the Calculator app, input '10!\u00f7(2!x8!)'.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 25,
+      "max_steps": 25,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorInputPercent50Of28",
+      "goal": "In the Calculator app, compute 50% of 28 ('50%28').",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorGeometricMean",
+      "goal": "In the Calculator app, compute the geometric mean of 3, 4, and 5.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 30,
+      "max_steps": 30,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorHarmonicMean",
+      "goal": "In the Calculator app, compute the harmonic mean of 4 and 5.",
+      "score": 0.0,
+      "completed": true,
+      "steps": 16,
+      "max_steps": 30,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorConvert45DegreesToRadians",
+      "goal": "In the Calculator app, input the formula for converting 45 degrees to radians ('45x\u03c0\u00f7180').",
+      "score": 0.0,
+      "completed": false,
+      "steps": 25,
+      "max_steps": 25,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorSumFirst5Fibonacci",
+      "goal": "In the Calculator app, input the formula for computing sum of the first 5 Fibonacci numbers.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 25,
+      "max_steps": 25,
+      "success": false
+    },
+    {
+      "task_name": "CalculatorSumFirst5Primes",
+      "goal": "In the Calculator app, input the formula for computing sum of the first 5 prime numbers.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 25,
+      "max_steps": 25,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask1",
+      "goal": "Open the Snapseed app.",
+      "score": 1.0,
+      "completed": true,
+      "steps": 2,
+      "max_steps": 10,
+      "success": true
+    },
+    {
+      "task_name": "SnapseedTask2",
+      "goal": "In the Snapseed app, open an image.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask3",
+      "goal": "In the Snapseed app, open an image and apply noir Pop filter.",
+      "score": 0.0,
+      "completed": true,
+      "steps": 5,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask4",
+      "goal": "In the Snapseed app, open an image and apply portrait filter.",
+      "score": 0.0,
+      "completed": true,
+      "steps": 5,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask5",
+      "goal": "In the Snapseed app, open an image and go to tools tab.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask6",
+      "goal": "In the Snapseed app, set dark theme.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask7",
+      "goal": "In the Snapseed app, set format quality to JPG 100%.",
+      "score": 0.0,
+      "completed": true,
+      "steps": 5,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask8",
+      "goal": "In the Snapseed app, set image sizing to 2000 px.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 20,
+      "max_steps": 20,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask9",
+      "goal": "In the Snapseed app, apply noir Pop filter to an image after setting dark theme.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 30,
+      "max_steps": 30,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask10",
+      "goal": "In the Snapseed app, apply noir Pop filter to an image after setting format quality to JPG 100%.",
+      "score": 0.0,
+      "completed": true,
+      "steps": 7,
+      "max_steps": 30,
+      "success": false
+    },
+    {
+      "task_name": "SnapseedTask11",
+      "goal": "In the Snapseed app, apply noir Pop filter to an image after setting image sizing to 2000 px.",
+      "score": 0.0,
+      "completed": true,
+      "steps": 20,
+      "max_steps": 30,
+      "success": false
+    },
+    {
+      "task_name": "WikipediaOpen",
+      "goal": "Open the Wikipedia app.",
+      "score": 1.0,
+      "completed": true,
+      "steps": 2,
+      "max_steps": 10,
+      "success": true
+    },
+    {
+      "task_name": "WikipediaGoToSearchTab",
+      "goal": "In the Wikipedia app, go to the search tab.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "WikipediaGoToSavedTab",
+      "goal": "In the Wikipedia app, go to the saved tab.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 15,
+      "max_steps": 15,
+      "success": false
+    },
+    {
+      "task_name": "WikipediaIncreaseTextSize180",
+      "goal": "In the Wikipedia app, increase the text size to 180%.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 30,
+      "max_steps": 30,
+      "success": false
+    },
+    {
+      "task_name": "WikipediaDisablePreviewAndFeed",
+      "goal": "In the Wikipedia app, disable the 'show link previews', 'top read' feed settings, and return to the feed on Wikipedia.",
+      "score": 0.0,
+      "completed": false,
+      "steps": 40,
+      "max_steps": 40,
+      "success": false
+    }
+  ]
+}
