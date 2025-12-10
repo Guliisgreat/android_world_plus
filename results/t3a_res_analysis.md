@@ -34,8 +34,8 @@
 
 | Category | Apps | Tasks | SR (%) | Avg Steps |
 |----------|------|-------|--------|-----------|
-| **AndroidLab** (new) | Bluecoins, Maps.me, Pi Music | 42 | 50.0% | 12.2 |
-| **BMOCA** (existing) | Calculator, Snapseed, Wikipedia | 35 | 45.7% | 10.5 |
+| **AndroidLab** | Bluecoins, Maps.me, Pi Music | 42 | 50.0% | 12.2 |
+| **BMOCA** | Calculator, Snapseed, Wikipedia | 35 | 45.7% | 10.5 |
 
 ## Key Insights
 
@@ -44,28 +44,5 @@
 3. **Most efficient**: Wikipedia (5.2 avg steps), Pi Music (6.9 avg steps)
 4. **Most steps needed**: Maps.me (16.5 avg steps) - navigation/search complexity
 
-## Task Type Analysis
 
-### Query Tasks (Information Retrieval)
-- Generally higher success rates
-- Agent uses `answer` action effectively
-- Examples: BluecoinsQuery*, PiMusicQuery*, MapsMeCheck*
-
-### Action Tasks (State Modification)
-- Lower success rates
-- Require precise UI interactions
-- Examples: BluecoinsAdd*, BluecoinsEdit*, PiMusicCreate*
-
-### Navigation Tasks
-- Variable success rates
-- Dependent on location search accuracy
-- Examples: MapsMeNavigate*, WikipediaGoTo*
-
-## Notes
-
-- SR = Success Rate
-- Avg Steps = Average number of steps taken per task
-- Max Steps = Maximum allowed steps (complexity-based)
-- AndroidLab apps are newly introduced tasks
-- BMOCA apps are existing benchmark tasks
 
