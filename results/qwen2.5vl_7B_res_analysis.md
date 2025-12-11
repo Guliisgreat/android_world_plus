@@ -25,7 +25,7 @@
 | **Total Tasks** | 77 |
 | **Total Successful** | 3 |
 | **Overall SR** | 3.9% |
-| **Weighted SR Variance** | 30.3 |
+| **Weighted SR Variance** | 30.3 pp² |
 | **Weighted SR Std Dev** | 5.5 pp |
 | **Average Steps/Task** | 3.2 |
 
