@@ -27,26 +27,6 @@
 | **Weighted SR Std Dev** | 11.5 pp | 10.7 pp | 5.5 pp | 16.8 pp | 15.4 pp |
 | **Avg Steps/Task** | 11.4 | 12.7 | 3.2 | 13.8 | 12.4 |
 
-## By App Category
-
-### AndroidLab Apps 
-
-| App | Tasks | T3A | M3A | Qwen2.5-VL 7B | UI-TARS 7B SFT | RL Finetuned |
-|-----|-------|-----|-----|---------------|----------------|--------------|
-| Bluecoins | 15 | 53.3% | 6.7% | 0.0% | 6.7% | 13.3% |
-| Maps.me | 15 | 40.0% | 0.0% | 6.7% | 0.0% | 6.7% |
-| Pi Music | 12 | 58.3% | 0.0% | 8.3% | 33.3% | 41.7% |
-| **Subtotal** | **42** | **50.0%** | **2.4%** | **4.8%** | **11.9%** | **19.1%** |
-
-### BMOCA Apps 
-
-| App | Tasks | T3A | M3A | Qwen2.5-VL 7B | UI-TARS 7B SFT | RL Finetuned |
-|-----|-------|-----|-----|---------------|----------------|--------------|
-| Calculator | 19 | 36.8% | 15.8% | 0.0% | 21.1% | 21.1% |
-| Snapseed | 11 | 45.5% | 0.0% | 0.0% | 36.4% | 36.4% |
-| Wikipedia | 5 | 80.0% | 40.0% | 20.0% | 60.0% | 60.0% |
-| **Subtotal** | **35** | **45.7%** | **14.3%** | **2.9%** | **31.4%** | **31.4%** |
-
 ## Average Steps per Task
 
 | App | Tasks | T3A | M3A | Qwen2.5-VL 7B | UI-TARS 7B SFT | RL Finetuned |
