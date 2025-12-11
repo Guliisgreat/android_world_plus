@@ -9,14 +9,14 @@
 
 ## Per-App Results
 
-| App | Tasks | Successful | SR (%) | Avg Steps | Max Steps (avg) |
-|-----|-------|------------|--------|-----------|-----------------|
-| **Bluecoins** | 15 | 1 | 6.7% | 18.4 | 27.0 |
-| **Maps.me** | 15 | 0 | 0.0% | 10.4 | 23.3 |
-| **Pi Music** | 12 | 0 | 0.0% | 5.4 | 17.1 |
-| **Calculator** | 19 | 3 | 15.8% | 17.8 | 19.7 |
-| **Snapseed** | 11 | 0 | 0.0% | 8.6 | 20.9 |
-| **Wikipedia** | 5 | 2 | 40.0% | 20.0 | 22.0 |
+| App | Tasks | Successful | SR (%) | Avg Steps |
+|-----|-------|------------|--------|-----------|
+| **Bluecoins** | 15 | 1 | 6.7% | 18.4 |
+| **Maps.me** | 15 | 0 | 0.0% | 10.4 |
+| **Pi Music** | 12 | 0 | 0.0% | 5.4 |
+| **Calculator** | 19 | 3 | 15.8% | 17.8 |
+| **Snapseed** | 11 | 0 | 0.0% | 8.6 |
+| **Wikipedia** | 5 | 2 | 40.0% | 20.0 |
 
 ## Aggregate Statistics
 
